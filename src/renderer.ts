@@ -3,7 +3,7 @@ import { marked } from 'marked'; // Import the marked library
 import { showToast } from './toast-notifications'; 
 import { 
     modelSelector, chatMessagesDiv, messageInput, sendButton, chatHeaderModelSpan, exportChatButton,
-    chatListUl, newChatButton,
+    chatListUl, newChatButton, chatSearchInput, // Added chatSearchInput
     personaSelector,
     settingsModal, openSettingsButton, closeSettingsButton,
     addApiKeyButton, apiKeyListDiv, providerSelect, keyLabelInput, keyValueInput,
@@ -14,6 +14,8 @@ import { openSettingsModal, closeSettingsModal } from './settings-modal-manager'
 import { renderApiKeysList, setupAddApiKeyButtonListeners as setupApiKeysAddListeners } from './settings-api-keys-ui'; // Aliased for clarity
 import { setupAddEnabledModelButtonListeners as setupEnabledModelsAddListeners } from './settings-enabled-models-ui'; // loadAndDisplayEnabledModelsFromUi removed
 import { setupPersonaManagementListeners } from './settings-personas-ui'; // Import new setup function
+import { setupChatSearch } from './chat-search-ui'; // Import chat search setup
+import type { ChatSessionMetadata as PreloadChatSessionMetadata } from './preload'; // Import for global API declaration
 
 // --- Interface Definitions (Matching preload.ts and index.ts) ---
 export interface ApiKeyEntry {
@@ -92,6 +94,9 @@ declare global {
             savePersona: (personaData: { id?: string; name: string; prompt: string }) => Promise<Persona | null>;
             deletePersona: (personaId: string) => Promise<boolean>;
             setChatSessionPersona: (sessionId: string, personaId: string | null) => Promise<boolean>; // NEW
+
+            // Search Functionality
+            searchChats: (searchTerm: string) => Promise<PreloadChatSessionMetadata[]>;
         }
     }
 }
@@ -122,7 +127,8 @@ let currentSelectedModelEntryId: string | null = null; // Store the ID of the se
 export let cachedApiKeys: ApiKeyEntry[] = []; // Cache keys for populating dropdowns
 
 // NEW State Variables for Multi-Session Management
-let allSessionsMetadata: ChatSessionMetadata[] = [];
+let allSessionsMetadata: PreloadChatSessionMetadata[] = []; // Use imported type
+let displayedSessionsMetadata: PreloadChatSessionMetadata[] = []; // For search results
 let activeSessionId: string | null = null;
 let currentConversationMessages: ChatMessage[] = []; // Holds messages for the activeSessionId
 
@@ -432,12 +438,25 @@ if (messageInput) {
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', async () => {
     loadAndPopulateChatModelDropdown();
-    await loadAndDisplayChatSessions();
+    await loadAndDisplayChatSessions(); // This will now also init displayedSessionsMetadata
     await populatePersonaSelector();
-    setupApiKeysAddListeners(); // Setup listener for Add API Key button
-    setupEnabledModelsAddListeners(); // Setup listener for Add Enabled Model button
-    setupPersonaManagementListeners(); // Setup listeners for Persona Management
+    setupApiKeysAddListeners(); 
+    setupEnabledModelsAddListeners(); 
+    setupPersonaManagementListeners(); 
+    if (chatSearchInput) { // Setup chat search
+        setupChatSearch(chatSearchInput, handleSearchResults);
+    }
 });
+
+// --- Search Results Handler ---
+function handleSearchResults(results: PreloadChatSessionMetadata[] | null) {
+    if (results === null) { // Search cleared or empty
+        displayedSessionsMetadata = [...allSessionsMetadata];
+    } else {
+        displayedSessionsMetadata = results;
+    }
+    renderChatList(); // Re-render the chat list with filtered/full data
+}
 
 // --- Persona Selector UI Functions ---
 export async function populatePersonaSelector() {
@@ -520,16 +539,24 @@ async function loadAndDisplayChatSessions() {
     try {
         console.log("Renderer: Loading chat sessions metadata...");
         const sessions = await window.electronAPI.loadChatSessionsMetadata();
+        // Ensure allSessionsMetadata uses PreloadChatSessionMetadata
         allSessionsMetadata = sessions.map(s => ({ 
             id: s.id!, 
             title: s.title!, 
             createdAt: s.createdAt!, 
             lastModifiedAt: s.lastModifiedAt!,
             activePersonaId: s.activePersonaId 
-        }));
-        renderChatList();
-        if (allSessionsMetadata.length > 0) {
-            await selectChatSession(allSessionsMetadata[0].id);
+        } as PreloadChatSessionMetadata));
+        
+        displayedSessionsMetadata = [...allSessionsMetadata]; // Initialize displayed list
+        
+        if (chatSearchInput) chatSearchInput.value = ''; // Clear search on full load
+
+        renderChatList(); // Will use displayedSessionsMetadata
+
+        if (displayedSessionsMetadata.length > 0) {
+            // Select the first chat from the potentially filtered (but initially full) list
+            await selectChatSession(displayedSessionsMetadata[0].id); 
         } else {
             if (chatMessagesDiv) chatMessagesDiv.innerHTML = '<div class="message system">No chats yet. Start a new one!</div>';
             currentConversationMessages = [];
@@ -544,11 +571,19 @@ async function loadAndDisplayChatSessions() {
 function renderChatList() {
     if (!chatListUl) return;
     chatListUl.innerHTML = ''; 
-    if (allSessionsMetadata.length === 0) {
-        chatListUl.innerHTML = '<li>(No chats yet)</li>';
+    
+    const searchTerm = chatSearchInput ? chatSearchInput.value.trim() : "";
+
+    if (displayedSessionsMetadata.length === 0) {
+        if (searchTerm) { // If search was active and found nothing
+            chatListUl.innerHTML = '<li>No matching chats found.</li>';
+        } else { // No chats at all
+            chatListUl.innerHTML = '<li>(No chats yet)</li>';
+        }
         return;
     }
-    allSessionsMetadata.forEach(sessionMeta => {
+
+    displayedSessionsMetadata.forEach(sessionMeta => { // Use displayedSessionsMetadata
         const li = document.createElement('li');
         li.textContent = sessionMeta.title || 'Untitled Chat';
         li.setAttribute('data-session-id', sessionMeta.id);
@@ -721,7 +756,11 @@ async function selectChatSession(sessionId: string) {
     if (!sessionId) return;
     console.log(`Renderer: Selecting chat session ${sessionId}`);
     try {
-        const sessionMetadata = allSessionsMetadata.find(s => s.id === sessionId);
+        // The search filter will persist when a chat is selected.
+        // displayedSessionsMetadata will already hold the correct (potentially filtered) list.
+        // renderChatList() at the end will highlight the active session within that list.
+
+        const sessionMetadata = allSessionsMetadata.find(s => s.id === sessionId); // Find from the master list to get full details if needed
         currentChatActivePersonaId = sessionMetadata?.activePersonaId || null;
         if (personaSelector) {
             personaSelector.value = currentChatActivePersonaId || ""; 
@@ -754,21 +793,26 @@ async function handleDeleteChatSession(sessionId: string) {
 }
 */
 
-async function handleNewChatButtonClick(): Promise<ChatSessionMetadata | null> {
+async function handleNewChatButtonClick(): Promise<PreloadChatSessionMetadata | null> {
     console.log("Renderer: New Chat button clicked.");
     try {
         const newSessionMetadataPartial = await window.electronAPI.createNewChatSession();
         if (newSessionMetadataPartial && newSessionMetadataPartial.id) {
-            const newSessionMetadata: ChatSessionMetadata = {
+            const newSessionMetadata: PreloadChatSessionMetadata = {
                 id: newSessionMetadataPartial.id,
                 title: newSessionMetadataPartial.title || 'Untitled Chat',
                 createdAt: newSessionMetadataPartial.createdAt || Date.now(),
                 lastModifiedAt: newSessionMetadataPartial.lastModifiedAt || Date.now(),
                 activePersonaId: newSessionMetadataPartial.activePersonaId || null 
             };
-            allSessionsMetadata.unshift(newSessionMetadata); 
+            allSessionsMetadata.unshift(newSessionMetadata);
+            
+            // Clear search when creating a new chat
+            if (chatSearchInput) chatSearchInput.value = "";
+            displayedSessionsMetadata = [...allSessionsMetadata]; // Reset to show all
+
             renderChatList(); 
-            await selectChatSession(newSessionMetadata.id); 
+            await selectChatSession(newSessionMetadata.id); // This will also ensure displayedSessions is reset if search was active
             if (messageInput) {
                 messageInput.value = ''; 
                 messageInput.focus(); 

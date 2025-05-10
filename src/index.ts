@@ -78,6 +78,19 @@ type SchemaType = {
     personas?: Persona[];           // NEW: Array of personas
 };
 
+// --- Define Interfaces (consistent with preload.ts and renderer.ts) ---
+// (Existing interfaces like ApiKeyEntry, StoredApiKey, EnabledModelEntry, etc. are already here)
+
+// ChatSessionMetadata (structure to be returned by the search)
+// This mirrors the type used in renderer.ts and defined in preload.ts
+interface ChatSessionMetadata {
+    id: string;
+    title: string;
+    createdAt: number;
+    lastModifiedAt: number;
+    activePersonaId?: string | null;
+}
+
 // --- Initialize electron-store ---
 // Initialize with the updated schema and defaults
 const store = new Store<SchemaType>({
@@ -687,6 +700,65 @@ ipcMain.handle('handle-set-chat-session-persona', async (event, sessionId: strin
     } catch (error) {
         console.error(`Main: Error setting persona for session ${sessionId}:`, error);
         return false;
+    }
+});
+
+// --- NEW Search Chats IPC Handler ---
+ipcMain.handle('search-chats', async (event, searchTerm: string): Promise<ChatSessionMetadata[]> => {
+    console.log(`Main: Handling search-chats request with term: "${searchTerm}"`);
+    if (typeof searchTerm !== 'string' || searchTerm.trim() === '') {
+        // If search term is empty or invalid, could return all sessions or empty array.
+        // Returning all sessions metadata might be more user-friendly for an empty search.
+        // For now, let's stick to returning matches or empty if no term.
+        // Or, let renderer handle empty search term by not calling IPC.
+        // For this handler, if term is empty, return no results.
+        return []; 
+    }
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const results: ChatSessionMetadata[] = [];
+
+    try {
+        const sessions: ChatSession[] = store.get('chatSessions', []);
+        
+        for (const session of sessions) {
+            let matchFound = false;
+
+            // 1. Check session title
+            if (session.title && session.title.toLowerCase().includes(lowerSearchTerm)) {
+                matchFound = true;
+            }
+
+            // 2. If not found in title, check message content
+            if (!matchFound && session.messages) {
+                for (const message of session.messages) {
+                    if (message.content && message.content.toLowerCase().includes(lowerSearchTerm)) {
+                        matchFound = true;
+                        break; // Found in this session's messages, no need to check further messages
+                    }
+                }
+            }
+
+            if (matchFound) {
+                results.push({
+                    id: session.id,
+                    title: session.title,
+                    createdAt: session.createdAt,
+                    lastModifiedAt: session.lastModifiedAt,
+                    activePersonaId: session.activePersonaId,
+                });
+            }
+        }
+        
+        console.log(`Main: Search for "${searchTerm}" found ${results.length} sessions.`);
+        // Sort results by lastModifiedAt descending, like the main list
+        results.sort((a, b) => b.lastModifiedAt - a.lastModifiedAt);
+        return results;
+
+    } catch (error) {
+        console.error('Main: Error during chat search:', error);
+        // In case of error, return empty array or throw
+        return []; // Or throw error;
     }
 });
 

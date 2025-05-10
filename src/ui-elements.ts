@@ -11,6 +11,7 @@ export const exportChatButton = document.getElementById('export-chat-button') as
 // ## Sidebar Elements ##
 export const chatListUl = document.getElementById('chat-list') as HTMLUListElement | null;
 export const newChatButton = document.getElementById('new-chat-button') as HTMLButtonElement | null;
+export const chatSearchInput = document.getElementById('chat-search-input') as HTMLInputElement | null;
 
 // ## Main Chat UI Elements ## (Continued)
 export const personaSelector = document.getElementById('persona-selector') as HTMLSelectElement | null;
@@ -41,3 +42,6 @@ export const personaPromptInput = document.getElementById('persona-prompt-input'
 export const savePersonaButton = document.getElementById('save-persona-button') as HTMLButtonElement | null;
 export const clearPersonaFormButton = document.getElementById('clear-persona-form-button') as HTMLButtonElement | null;
 export const personaListDiv = document.getElementById('persona-list-div') as HTMLDivElement | null;
+
+// Toast Notifications
+export const toastContainer = document.getElementById('toast-notification-container') as HTMLDivElement | null;

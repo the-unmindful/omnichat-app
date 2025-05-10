@@ -95,7 +95,20 @@ export interface ElectronAPI {
     setChatSessionPersona: (sessionId: string, personaId: string | null) => Promise<boolean>; // NEW
 
     // REMOVE OLD HISTORY HANDLERS (saveChatHistory, loadChatHistory are now obsolete)
+
+    // --- NEW Search Functionality ---
+    searchChats: (searchTerm: string) => Promise<ChatSessionMetadata[]>; // Returns array of session metadata
 }
+
+// Define ChatSessionMetadata here for preload's use, mirroring renderer.ts
+export interface ChatSessionMetadata {
+    id: string;
+    title: string;
+    createdAt: number;
+    lastModifiedAt: number;
+    activePersonaId?: string | null;
+}
+
 
 // Add Persona interface if not already present (it was added in index.ts, ensure consistency)
 // It's already defined above from previous steps, but ensure it's exported or accessible.
@@ -208,6 +221,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setChatSessionPersona: (sessionId: string, personaId: string | null) => { // NEW
         console.log(`Preload: Sending handle-set-chat-session-persona for session ${sessionId}`);
         return ipcRenderer.invoke('handle-set-chat-session-persona', sessionId, personaId);
+    },
+
+    // --- NEW Search Functionality Mapping ---
+    searchChats: (searchTerm: string) => {
+        console.log(`Preload: Sending search-chats request with term: "${searchTerm}"`);
+        return ipcRenderer.invoke('search-chats', searchTerm);
     }
 
     // REMOVE OLD MAPPINGS for saveChatHistory and loadChatHistory
