@@ -1,0 +1,847 @@
+/* --- OmniChat Styles - Paper Modern --- */
+
+/* 1. CSS Variables (Theme Foundation) */
+:root {
+    /* Color Palette (Light Theme Example) */
+    --bg-app: #f7f7f7;             /* Overall app background */
+    --bg-content: #ffffff;         /* Main content area background */
+    --bg-sidebar: #f0f1f3;         /* Sidebar background */
+    --bg-header-input: #f9f9fb;   /* Header and input area backgrounds */
+    --bg-message-user: #e1f3ff;      /* User message bubble */
+    --bg-message-assistant: #f0f1f3; /* Assistant message bubble */
+    --bg-message-system: #fffbdd;  /* System message background */
+    --bg-message-error: #ffebee;   /* Error message background */
+    --bg-hover-subtle: #e8e9ec;     /* Subtle hover for lists */
+    --bg-selected: #d8dde4;        /* Selected item background */
+    --text-primary: #2c3e50;       /* Main text color */
+    --text-secondary: #5f6368;     /* Lighter text (placeholders, labels) */
+    --text-accent: #007aff;         /* Text color for links/accents */
+    --text-on-accent: #ffffff;     /* Text on accent buttons */
+    --text-error: #c62828;         /* Error text color */
+    --border-color-soft: #e0e0e0;  /* Soft borders/dividers */
+    --border-color-medium: #d1d5db; /* Medium borders */
+    --accent-primary: #007aff;     /* Primary action color (buttons, highlights) */
+    --accent-primary-hover: #0056b3; /* Hover for primary accent */
+    --accent-danger: #e53935;       /* Danger color (delete buttons) */
+    --accent-danger-hover: #c62828; /* Hover for danger */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
+
+    /* Typography */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    --font-size-base: 14px;
+    --font-size-sm: 12px;
+    --font-size-lg: 16px;
+    --line-height-base: 1.6;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+
+    /* Borders */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+}
+
+/* --- Dark Theme Variables (Example - Enable via body class or JS later) --- */
+/*
+body.dark-theme {
+    --bg-app: #1e1e1e;
+    --bg-content: #252526;
+    --bg-sidebar: #2d2d2d;
+    --bg-header-input: #333333;
+    --bg-message-user: #3a3d4b;
+    --bg-message-assistant: #3e3e42;
+    --bg-message-system: #4a4a3a;
+    --bg-message-error: #5c2b2b;
+    --bg-hover-subtle: #3a3a3a;
+    --bg-selected: #4a4a4a;
+    --text-primary: #d4d4d4;
+    --text-secondary: #a0a0a0;
+    --text-accent: #3b9cff;
+    --text-on-accent: #ffffff;
+    --text-error: #f48a8a;
+    --border-color-soft: #444444;
+    --border-color-medium: #555555;
+    --accent-primary: #3b9cff;
+    --accent-primary-hover: #66b3ff;
+    --accent-danger: #f48a8a;
+    --accent-danger-hover: #f6a8a8;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+*/
+
+/* 2. Basic Reset & Body Styling */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--text-primary);
+    background-color: var(--bg-app);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. Main App Container */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-content); /* Content area is primary */
+    box-shadow: var(--shadow-lg); /* Give the whole app container a subtle lift */
+}
+
+/* 4. Sidebar Styling */
+.sidebar {
+    min-width: 220px; /* Allow shrinking */
+    width: 260px;     /* Default width */
+    max-width: 400px; /* Max shrink/grow */
+    background-color: var(--bg-sidebar);
+    padding: var(--spacing-lg);
+    border-right: 1px solid var(--border-color-soft);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Don't shrink below min-width */
+    /* Add resize handle styling if implementing JS resize */
+    /* resize: horizontal; */
+    /* overflow: auto; */
+}
+
+/* Styling for buttons directly in the sidebar, like "New Chat" */
+.sidebar-button {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    background-color: var(--accent-primary);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-button:hover {
+    background-color: var(--accent-primary-hover);
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-xl);
+    font-size: 1.1em;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto; /* Add scrollbar if list is long */
+}
+
+.sidebar li {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar li:hover {
+    background-color: var(--bg-hover-subtle);
+}
+
+.sidebar li.active { /* Add class 'active' with JS when chat is selected */
+    background-color: var(--bg-selected);
+    font-weight: 500;
+}
+
+/* Style for the delete button on chat list items */
+.delete-chat-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1em; /* Adjust size as needed */
+    padding: 0 var(--spacing-xs);
+    margin-left: var(--spacing-sm);
+    float: right; /* Position to the right */
+    opacity: 0.6;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.sidebar li:hover .delete-chat-button {
+    opacity: 1; /* Show more clearly on hover of parent li */
+}
+
+.delete-chat-button:hover {
+    color: var(--accent-danger);
+    opacity: 1;
+}
+
+/* Styling for the input field when renaming a chat */
+.rename-chat-input {
+    width: calc(100% - 35px); /* Adjust to fit within li, leaving space for potential (not implemented) save/cancel icons */
+    padding: var(--spacing-xs);
+    margin: 0;
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--border-radius-sm);
+    font-family: inherit;
+    font-size: inherit;
+    background-color: var(--bg-content); /* Match content background for input */
+    color: var(--text-primary);
+}
+.sidebar li:has(input.rename-chat-input) {
+    padding-top: calc(var(--spacing-sm) - var(--spacing-xs)); /* Adjust padding of li when input is inside */
+    padding-bottom: calc(var(--spacing-sm) - var(--spacing-xs));
+}
+
+
+.sidebar hr {
+    border: none;
+    border-top: 1px solid var(--border-color-soft);
+    margin: var(--spacing-lg) 0;
+}
+
+.sidebar button#open-settings-button { /* Specific styling for settings button */
+    margin-top: auto; /* Push to bottom */
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--bg-content); /* Match content background */
+    border: 1px solid var(--border-color-medium);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar button#open-settings-button:hover {
+    background-color: var(--bg-hover-subtle);
+    border-color: var(--border-color-medium);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 5. Main Content Area Styling */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--bg-content);
+    overflow: hidden; /* <<< ADDED: Prevent content spilling out horizontally */
+    min-width: 0; /* <<< ADDED: Allow flex item to shrink below content size */
+}
+
+/* 6. Chat Header */
+.chat-header {
+    padding: var(--spacing-sm) var(--spacing-xl);
+    border-bottom: 1px solid var(--border-color-soft);
+    background-color: var(--bg-header-input);
+    display: flex;
+    /* justify-content: space-between; */ /* Use gap instead */
+    align-items: center;
+    flex-shrink: 0;
+    gap: var(--spacing-md); /* <<< ADDED: Add gap for spacing */
+}
+
+.chat-header span#chat-header-model-label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* margin-right: var(--spacing-md); */ /* Removed margin */
+    min-width: 0; /* <<< ADDED: Allow shrinking */
+    flex-shrink: 1; /* <<< ADDED: Allow shrinking if needed */
+}
+
+.chat-header select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-content);
+    color: var(--text-primary);
+    font-size: 0.9em;
+    /* margin: 0 var(--spacing-md); */ /* Removed margin */
+    min-width: 150px;
+    flex-shrink: 10; /* <<< MODIFIED: Allow select to shrink more readily */
+    max-width: 300px; /* Optional: prevent it getting too wide */
+}
+
+.chat-header button {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.9em;
+    background-color: var(--bg-sidebar);
+    border: 1px solid var(--border-color-medium);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0; /* <<< ADDED: Don't let buttons shrink */
+}
+.chat-header button:hover {
+    background-color: var(--bg-hover-subtle);
+}
+
+
+/* 7. Chat Messages Area */
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md); /* Space between messages */
+}
+
+.message {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    max-width: 85%;
+    line-height: 1.5;
+    box-shadow: var(--shadow-sm);
+    word-wrap: break-word;
+    /* Ensure message itself doesn't cause overflow if max-width is hit */
+    overflow-wrap: break-word;
+    position: relative; /* Ensure .message is the positioning context for copy button */
+}
+
+.message-content { /* Wrapper for the main text content */
+    /* padding-bottom: 1.5em; /* No longer needed for internal label */
+    /* position: relative; /* Not needed if copy button is child of .message */
+}
+
+/* .message-model-label { /* OLD - REMOVE THESE STYLES */
+    /* font-size: 0.75em; */
+    /* color: var(--text-secondary); */
+    /* position: absolute; */
+    /* bottom: var(--spacing-xs); */
+    /* right: var(--spacing-md); */
+    /* opacity: 0.8; */
+/* } */
+
+/* NEW styles for the outer chat entry and external model label */
+.chat-entry {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--spacing-sm); /* Add some space between full entries if needed */
+}
+
+.chat-entry.user {
+    align-items: flex-end;
+}
+
+.chat-entry.assistant {
+    align-items: flex-start;
+}
+
+/* System and error messages might not use chat-entry or might need specific alignment */
+.chat-entry.system .message.system,
+.chat-entry.error .message.error {
+    align-self: stretch; /* Or center, depending on desired full-width look */
+}
+.chat-entry.system, .chat-entry.error { /* Ensure these also align correctly if they use chat-entry */
+    align-items: stretch; /* Or center */
+}
+
+
+.model-label-outside {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    padding-top: var(--spacing-xs);
+    padding-left: var(--spacing-lg); /* Align with message padding for assistant */
+    padding-right: var(--spacing-lg); /* Align with message padding for user */
+    max-width: 85%; /* Match .message max-width */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.chat-entry.user .model-label-outside { 
+    /* This won't typically exist for user messages, but if it did: */
+    align-self: flex-end; 
+    text-align: right;
+}
+
+.chat-entry.assistant .model-label-outside {
+    align-self: flex-start; /* Label aligns with the start of the assistant bubble */
+    text-align: left; /* Text within label aligns left */
+}
+
+.copy-message-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9em; /* Adjust as needed */
+    padding: var(--spacing-xs);
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    opacity: 0.5; /* Make it subtle until hover */
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.message:hover .copy-message-button {
+    opacity: 1; /* Show on hover of the message bubble */
+}
+
+.copy-message-button:hover {
+    color: var(--accent-primary);
+}
+
+
+.message.user {
+    background-color: var(--bg-message-user);
+    color: #1c1e21;
+    margin-left: auto;
+    align-self: flex-end; /* Explicitly align self to the end */
+    border-bottom-right-radius: var(--border-radius-sm);
+}
+
+.message.assistant {
+    background-color: var(--bg-message-assistant);
+    margin-right: auto;
+    align-self: flex-start; /* Explicitly align self to the start */
+    border-bottom-left-radius: var(--border-radius-sm);
+}
+
+.message.system {
+    background-color: var(--bg-message-system);
+    color: #5f5a3d;
+    font-size: var(--font-size-sm);
+    font-style: italic;
+    text-align: center;
+    max-width: 100%;
+    margin: var(--spacing-sm) auto;
+    box-shadow: none;
+    border: 1px dashed var(--border-color-medium);
+    align-self: center;
+}
+
+.message.error {
+    background-color: var(--bg-message-error);
+    color: var(--text-error);
+    font-weight: 500;
+    border: 1px solid var(--accent-danger);
+    max-width: 100%;
+    align-self: stretch; /* Stretch error messages */
+}
+
+/* Code block styling within messages */
+.message pre {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    font-size: 0.9em;
+    margin: var(--spacing-sm) 0;
+    border: 1px solid var(--border-color-soft);
+}
+.message code {
+   font-family: var(--font-family-mono);
+}
+.message pre code {
+    background-color: transparent;
+    padding: 0;
+    border: none;
+}
+
+
+/* 8. Chat Input Area */
+.chat-input-area {
+    display: flex;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-color-soft);
+    background-color: var(--bg-header-input);
+    flex-shrink: 0;
+    align-items: flex-end;
+}
+
+.chat-input-area textarea {
+    flex-grow: 1;
+    resize: none;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-lg);
+    margin-right: var(--spacing-md);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.4;
+    min-height: 44px;
+    max-height: 150px;
+    overflow-y: auto;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chat-input-area textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+.chat-input-area button#send-button {
+    padding: 0 var(--spacing-lg);
+    height: 44px;
+    flex-shrink: 0;
+    cursor: pointer;
+    background-color: var(--accent-primary);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.chat-input-area button#send-button:hover:not(:disabled) {
+    background-color: var(--accent-primary-hover);
+}
+.chat-input-area button#send-button:disabled {
+    background-color: #a0cfff;
+    cursor: not-allowed;
+}
+
+
+/* 9. Modal Styling */
+.modal {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-xl);
+}
+
+.modal-content {
+    background-color: var(--bg-content);
+    padding: var(--spacing-xl);
+    border: none;
+    width: 90%;
+    max-width: 700px;
+    border-radius: var(--border-radius-lg);
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.close-button {
+    color: var(--text-secondary);
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-lg);
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Modal Sections */
+.settings-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color-soft);
+}
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.settings-section h3 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.15em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.settings-section h4 {
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.0em;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Modal Forms & Lists */
+.api-key-form, .enabled-model-form {
+    margin-bottom: var(--spacing-lg);
+}
+
+.api-key-form select,
+.api-key-form input[type="text"],
+.api-key-form input[type="password"],
+.enabled-model-form select,
+.enabled-model-form input[type="text"] {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-app);
+    font-size: 0.95em;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.api-key-form select:focus,
+.api-key-form input[type="text"]:focus,
+.api-key-form input[type="password"]:focus,
+.enabled-model-form select:focus,
+.enabled-model-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+
+.api-key-form button,
+.enabled-model-form button {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    cursor: pointer;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    margin-top: var(--spacing-xs);
+}
+.api-key-form button {
+    background-color: var(--accent-primary);
+    color: var(--text-on-accent);
+}
+.api-key-form button:hover {
+    background-color: var(--accent-primary-hover);
+}
+.enabled-model-form button {
+     background-color: #4CAF50;
+     color: white;
+}
+.enabled-model-form button:hover {
+     background-color: #45a049;
+}
+
+/* Modal Lists */
+.api-key-list, .enabled-model-list {
+    margin-top: var(--spacing-md);
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color-soft);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm);
+    background-color: var(--bg-app);
+}
+
+.key-entry, .model-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color-soft);
+    font-size: 0.9em;
+}
+.key-entry:last-child, .model-entry:last-child {
+    border-bottom: none;
+}
+
+.key-info, .model-info {
+    flex-grow: 1;
+    margin-right: var(--spacing-md);
+    overflow: hidden;
+}
+
+.key-info span, .model-info span {
+    margin-right: var(--spacing-md);
+    display: inline-block;
+    vertical-align: middle;
+}
+.key-info .key-value-masked { color: var(--text-secondary); font-style: italic; }
+.model-info .model-user-label { font-weight: 500; }
+.model-info .model-provider-info { font-style: italic; color: var(--text-secondary); font-size: 0.9em; }
+.model-info .model-id-info { font-family: var(--font-family-mono); color: var(--text-secondary); background-color: var(--bg-sidebar); padding: 2px 5px; border-radius: var(--border-radius-sm); font-size: 0.9em; }
+.model-info .model-key-link { color: var(--text-accent); font-size: 0.9em; }
+
+
+.key-actions, .model-actions {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.key-actions button, .model-actions button {
+    margin-left: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.9em;
+    cursor: pointer;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease;
+}
+
+.copy-key-button { background-color: var(--accent-primary); color: var(--text-on-accent); }
+.copy-key-button:hover { background-color: var(--accent-primary-hover); }
+.delete-key-button, .delete-model-button { background-color: var(--accent-danger); color: white; }
+.delete-key-button:hover, .delete-model-button:hover { background-color: var(--accent-danger-hover); }
+
+
+/* 10. Scrollbar Styling (Optional, Webkit specific) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+/* For Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 transparent;
+}
+
+/* 11. Markdown Content Styling (within .message-content) */
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    line-height: 1.3;
+}
+.message-content h1 { font-size: 1.6em; }
+.message-content h2 { font-size: 1.4em; }
+.message-content h3 { font-size: 1.2em; }
+.message-content h4 { font-size: 1.0em; } /* Base size, but bold */
+.message-content h5 { font-size: 0.9em; }
+.message-content h6 { font-size: 0.8em; color: var(--text-secondary); }
+
+.message-content p {
+    margin-top: 0;
+    margin-bottom: var(--spacing-sm);
+}
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content ul,
+.message-content ol {
+    margin-top: 0;
+    margin-bottom: var(--spacing-sm);
+    padding-left: var(--spacing-lg); /* Indent lists */
+}
+.message-content ul li,
+.message-content ol li {
+    margin-bottom: var(--spacing-xs);
+}
+
+.message-content blockquote {
+    margin: var(--spacing-sm) 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-left: 4px solid var(--border-color-medium);
+    background-color: var(--bg-sidebar); /* Slightly different background */
+    color: var(--text-secondary);
+    font-style: italic;
+}
+.message-content blockquote p {
+    margin-bottom: 0;
+}
+
+.message-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color-soft);
+    margin: var(--spacing-lg) 0;
+}
+
+.message-content a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+.message-content a:hover {
+    text-decoration: underline;
+}
+
+/* Code and Pre already styled by .message pre and .message code, but we can refine if needed */
+/* Ensure inline code also has some distinction */
+.message-content code { /* For inline code, not in pre */
+    font-family: var(--font-family-mono);
+    background-color: rgba(0,0,0,0.05); /* Subtle background for inline code */
+    padding: 2px 5px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9em;
+}
+.message-content pre > code { /* Code specifically inside pre should not have extra padding/bg */
+    background-color: transparent;
+    padding: 0;
+}
+
+.message-content table {
+    border-collapse: collapse;
+    margin: var(--spacing-md) 0;
+    width: auto; /* Or 100% if desired */
+    font-size: 0.9em;
+}
+.message-content th,
+.message-content td {
+    border: 1px solid var(--border-color-medium);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    text-align: left;
+}
+.message-content th {
+    background-color: var(--bg-sidebar);
+    font-weight: 600;
+}

@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    // --- Updated Target ---
+    "target": "ES2020",
+
+    "allowJs": true, // Keep for now, consider setting to false if only using TS
+    "module": "commonjs",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true, // Good practice
+    "sourceMap": true, // Good for debugging
+
+    // --- Removed baseUrl and paths ---
+    // "baseUrl": ".", // Remove unless needed for other aliases
+    // "paths": { "*": ["node_modules/*"] }, // REMOVE THIS - Likely the primary issue
+
+    // --- Commented out outDir - let Forge/Webpack manage it ---
+    // "outDir": "dist",
+
+    "moduleResolution": "node", // Correct setting for Node.js projects
+    "resolveJsonModule": true, // Usually needed
+
+    // --- Added Lib ---
+    "lib": ["DOM", "ES2020"] // Add core libraries
+  },
+  "include": [
+    "src/**/*" // Include all files in the src directory
+    // If you have forge.config.ts, include it too:
+    // "forge.config.ts"
+  ],
+   "exclude": [
+    "node_modules" // Standard exclusion
+  ]
+}

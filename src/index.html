@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>OmniChat</title>
+    <!-- CSS will be injected by Webpack/style-loader -->
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <button id="new-chat-button" class="sidebar-button">+ New Chat</button>
+            <h2>Chats</h2>
+            <ul id="chat-list">
+                <!-- Dynamic chat list items go here -->
+                <li>(No chats yet)</li>
+            </ul>
+            <hr>
+            <!-- Placeholder for future sidebar items -->
+            <button id="open-settings-button">Settings</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <span id="chat-header-model-label">No Model Selected</span>
+                <select id="model-selector">
+                    <option value="">-- Select Model --</option>
+                    <!-- Enabled models will populate this dropdown -->
+                </select>
+                <button id="export-chat-button">Export Chat</button>
+            </div>
+
+            <!-- Chat Messages Area -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will appear here -->
+                <div class="message system">Welcome to OmniChat! Configure your models in Settings.</div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-area">
+                <textarea id="message-input" placeholder="Type your message here..."></textarea>
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Single Instance) -->
+    <div id="settings-modal" class="modal" style="display: none;"> <!-- Initially hidden -->
+        <div class="modal-content">
+            <span class="close-button" id="close-settings-button">×</span>
+            <h2>Settings</h2>
+
+            <!-- Section 1: API Key Management -->
+            <div class="settings-section">
+                <h3>API Key Management</h3>
+                <div class="api-key-form">
+                    <h4>Add New API Key</h4>
+                    <select id="api-provider" name="provider">
+                        <option value="">-- Select Provider --</option>
+                        <option value="OpenAI">OpenAI</option>
+                        <option value="OpenRouter">OpenRouter</option>
+                        <option value="Gemini">Google Gemini</option>
+                        <option value="Anthropic">Anthropic</option>
+                        <!-- Add more providers here later -->
+                    </select>
+                    <input type="text" id="api-key-label" placeholder="Key Label (e.g., Personal OpenAI)">
+                    <input type="password" id="api-key-value" placeholder="API Key Value">
+                    <button id="add-api-key-button">Add Key</button>
+                </div>
+
+                <hr>
+
+                <h4>Saved API Keys</h4>
+                <div class="api-key-list" id="api-key-list">
+                    <!-- Saved keys will be listed here dynamically -->
+                    <p>No keys saved yet.</p>
+                </div>
+            </div>
+
+            <!-- Section 2: Configure Enabled Models (Added Section) -->
+            <div class="settings-section">
+                <h3>Configure Enabled Models</h3>
+                <div class="enabled-model-form">
+                     <h4>Add Enabled Model</h4>
+                    <input type="text" id="enabled-model-user-label" placeholder="Display Name (e.g., OR Llama3 Free)">
+                    <select id="enabled-model-provider" name="model-provider">
+                        <option value="">-- Select Provider --</option>
+                        <option value="OpenAI">OpenAI</option>
+                        <option value="OpenRouter">OpenRouter</option>
+                         <option value="Gemini">Google Gemini</option>
+                         <option value="Anthropic">Anthropic</option>
+                        <!-- Should match API key providers -->
+                    </select>
+                    <!-- ****** The previously missing input ****** -->
+                    <input type="text" id="enabled-model-id" placeholder="Exact Model ID (e.g., google/gemma-7b-it)">
+                    <select id="enabled-model-api-key-link">
+                         <option value="">-- Select API Key to Use --</option>
+                         <!-- API Keys will be populated here by JS -->
+                    </select>
+                    <button id="add-enabled-model-button">Add Enabled Model</button>
+                </div>
+
+                 <hr>
+
+                 <h4>Current Enabled Models</h4>
+                 <div class="enabled-model-list" id="enabled-model-list">
+                     <!-- Enabled models list will go here dynamically -->
+                     <p>No models configured yet.</p>
+                 </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
