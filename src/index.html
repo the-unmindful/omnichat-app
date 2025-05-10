@@ -29,6 +29,10 @@
                     <option value="">-- Select Model --</option>
                     <!-- Enabled models will populate this dropdown -->
                 </select>
+                <select id="persona-selector">
+                    <option value="">-- No Persona --</option>
+                    <!-- Saved personas will populate this dropdown -->
+                </select>
                 <button id="export-chat-button">Export Chat</button>
             </div>
 
@@ -111,7 +115,29 @@
                  </div>
             </div>
 
+            <!-- Section 3: Persona Management (NEW Section) -->
+            <div class="settings-section">
+                <h3>Persona Management</h3>
+                <div class="persona-form">
+                    <h4>Add/Edit Persona</h4>
+                    <input type="text" id="persona-name-input" placeholder="Persona Name (e.g., Helpful Assistant, Code Explainer)">
+                    <textarea id="persona-prompt-input" placeholder="System Prompt for this Persona..." rows="5"></textarea>
+                    <!-- Hidden input or data attribute could be used for editingPersonaId if needed, but JS state is often cleaner -->
+                    <button id="save-persona-button">Save Persona</button>
+                    <button id="clear-persona-form-button" type="button">Clear/Cancel Edit</button> 
+                </div>
+                <hr>
+                <h4>Saved Personas</h4>
+                <div class="persona-list" id="persona-list-div">
+                    <!-- Saved personas will be listed here dynamically -->
+                    <p>No personas saved yet.</p>
+                </div>
+            </div>
+
         </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-notification-container" class="toast-container"></div>
 </body>
 </html>

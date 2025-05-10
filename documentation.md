@@ -1,7 +1,7 @@
 # OmniChat: Multi-LLM Chat Client - Project Documentation
 
-**Version:** 1.1 (Reflecting current features as of 2025-05-10)
-**Date:** 2025-05-10 (Original: 2023-10-27)
+**Version:** 1.2 (Reflecting features post-Persona implementation and UI enhancements)
+**Date:** 2025-05-10 
 
 ## 1. Vision
 
@@ -48,18 +48,79 @@ These features represent the current functionality of the application.
     *   [Implemented] Local persistence of all chat sessions and their messages using `electron-store`.
     *   [Implemented] "New Chat" button to create new sessions.
     *   [Implemented] Automatic selection of the most recent chat session on startup.
+*   **Persona Management:**
+    *   [Implemented] Settings UI to add, view, edit, and delete Personas (custom system prompts).
+    *   [Implemented] Chat header dropdown to select an active Persona for the current chat session.
+    *   [Implemented] Persistence of the active Persona choice per chat session.
+    *   [Implemented] Correct application of Persona system prompts to OpenAI, OpenRouter, Anthropic, and Gemini APIs, adhering to provider-specific requirements.
+*   **UI/UX and Stability Enhancements:**
+    *   [Implemented] Non-blocking "Toast" notifications for user feedback (e.g., save success/failure, errors), replacing disruptive system `alert()` dialogs.
+    *   [Implemented] Non-blocking inline "Tick/Cross" (✔️/❌) confirmations for all delete operations (API Keys, Enabled Models, Personas, Chat Sessions), replacing disruptive system `confirm()` dialogs.
+    *   [Implemented] Resolved major UI hanging/freezing issues previously caused by synchronous dialogs, leading to a smoother user experience.
 *   **Basic Utilities:**
     *   [Implemented] Copy button (📋 icon) on each assistant message to copy the preceding user question and the assistant's response (with model label) to the clipboard in Markdown format.
-    *   [Implemented] "Export Chat" button in the chat header to save the entire active chat session as a Markdown (.md) file, including roles and model labels.
+    *   [Implemented] "Export Chat" button in the chat header to save the entire active chat session as a Markdown (.md) file, including roles, model labels, and active Persona system prompt if used.
 
 ## 4. Advanced Features & Roadmap
 
 *   **Currently Under Development / Next Up:**
-    *   **Personas:** Define and save custom system prompts (Personas). Select a Persona to apply to a chat session.
     *   **Model Parameter Configuration:** UI to view and tweak common model parameters (e.g., temperature, top_p) associated with personas or globally.
+
+### Next Implementation Focus: Enhanced Chat Organization & Filtering
+
+This section outlines a plan for the next set of major features to improve chat management.
+
+*   **1. Chat Filtering:**
+    *   **Goal:** Allow users to quickly find specific chat sessions based on various criteria.
+    *   **UI Elements (Sidebar, above chat list):**
+        *   A text input field for keyword search (e.g., "Filter chats by title/content...").
+        *   (Optional) Dropdown to select filter scope: Title only, Title + Message Content.
+        *   (Optional) Dropdown to filter by "Model Used" (based on `modelUsed` in `ChatMessage` or a session-level summary).
+        *   (Optional) Dropdown to filter by "Persona Used" (based on `activePersonaId` in `ChatSessionMetadata`).
+    *   **Logic (`renderer.ts`):**
+        *   Event listeners on the search input and filter dropdowns.
+        *   A core filtering function that takes the current `allSessionsMetadata` and applies active filters:
+            *   Keyword search: Matches against `session.title`. If content search is enabled, this becomes more complex and might require loading messages for visible sessions or an IPC call for backend search.
+            *   Model filter: Requires determining which model(s) were used in a session. This might involve checking `modelUsed` on the last few messages or storing a primary model on `ChatSessionMetadata`.
+            *   Persona filter: Directly filter on `session.activePersonaId`.
+        *   `renderChatList()` will be called with the filtered list of sessions.
+    *   **Backend/IPC (`index.ts`):**
+        *   For basic filtering on metadata (title, persona), no backend changes are immediately needed.
+        *   If deep content search across all messages of all sessions is required without loading everything into the renderer, a new IPC handler like `search-sessions-content` would be needed to perform the search within `electron-store` data.
+
+*   **2. Chat Folders:**
+    *   **Goal:** Allow users to organize chat sessions into custom folders.
+    *   **Data Model Changes (`index.ts` - `SchemaType` and interfaces):**
+        *   Introduce a new top-level array in the `electron-store` schema: `chatFolders: ChatFolder[]`.
+        *   Define `interface ChatFolder { id: string; name: string; createdAt: number; chatSessionIds: string[]; }`.
+        *   Modify `ChatSession` (and consequently `ChatSessionMetadata` if needed) to include an optional `folderId: string | null` to link a session to a folder.
+    *   **UI Elements & Interaction (`renderer.ts`, `index.html` - Sidebar):**
+        *   Display folders in the sidebar (e.g., as a separate list above chats, or an integrated tree view).
+        *   Button/mechanism to "Create New Folder".
+        *   For each folder:
+            *   Display folder name.
+            *   Allow renaming (e.g., double-click or context menu).
+            *   Allow deleting (with confirmation, potentially moving chats to "uncategorized" or deleting them too, based on user choice).
+            *   Expand/collapse functionality to show/hide chats within that folder.
+        *   Mechanism to move chats into folders:
+            *   Option 1 (Simpler): A "Move to Folder..." option in a context menu for each chat session, showing a sub-menu of available folders.
+            *   Option 2 (More Complex): Drag-and-drop chat sessions onto folders.
+    *   **Logic (`renderer.ts`):**
+        *   Functions for CRUD operations on folders (will trigger IPC calls).
+        *   Update `renderChatList` to:
+            *   First render folders.
+            *   Then render chats, grouped under their respective folders (or in a default "Uncategorized" area if `folderId` is null).
+        *   Logic to handle assigning/unassigning `folderId` to chat sessions and updating the `chatSessionIds` array in the `ChatFolder` objects.
+    *   **IPC Handlers (`index.ts`):**
+        *   `create-chat-folder(name: string): Promise<ChatFolder | null>`
+        *   `rename-chat-folder(folderId: string, newName: string): Promise<boolean>`
+        *   `delete-chat-folder(folderId: string, deleteContainedChats: boolean): Promise<boolean>`
+        *   `assign-chat-to-folder(sessionId: string, folderId: string | null): Promise<boolean>`
+        *   These handlers will update the `chatFolders` array and `folderId` on `chatSessions` in `electron-store`.
+
 *   **Post-MVP Roadmap (Future Considerations):**
     *   **Saved Prompts ("Snippets"):** UI to create, save, edit, delete, and easily insert reusable prompt templates.
-    *   **Chat Organization:** Star/Favorite chats, Folder system for chats.
+    *   **Chat Organization (Further):** Star/Favorite chats.
     *   **Enhanced Export:** Export chat as PDF.
     *   **UI/UX Refinements:** Theme support (Light/Dark), improved syntax highlighting for code blocks in rendered Markdown, smoother animations.
     *   **Document Attachment (Significant Feature - V2/V3):** Ability to attach documents for context.
@@ -93,6 +154,7 @@ These features represent the current functionality of the application.
 *   **Asset Relocator Patch Bypass**: The `apply` method in `node_modules/@electron-forge/plugin-webpack/dist/util/AssetRelocatorPatch.js` has been modified to `return;` immediately. This bypasses a patch that can cause issues with asset paths in some Electron Forge setups.
 *   **`electron-store` Version**: The project is using `electron-store` version 8.1.0 due to compatibility or stability reasons identified during development.
 *   **Markdown Rendering**: Uses the `marked` library for client-side rendering. Sanitization of Markdown output (e.g., via DOMPurify) is not currently implemented but should be considered if Markdown sources become less trusted.
+*   **Known UI Glitch**: A persistent issue exists where the Settings modal may unexpectedly disappear if text within an input field is selected very quickly from right-to-left, especially if the selection hits the "left wall" of the input block. Data is typically saved, but the modal closes. This is under investigation.
 
 ---
 

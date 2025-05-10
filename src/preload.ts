@@ -33,6 +33,8 @@ export interface ChatMessage {
     content: string;
     modelUsed?: string;
     id?: string;
+    personaUsedId?: string | null;    // NEW
+    personaUsedName?: string | null;  // NEW
 }
 
 // *** NEW: Interface for a distinct Chat Session (mirrors definition in index.ts) ***
@@ -42,6 +44,7 @@ export interface ChatSession {
     createdAt: number;
     lastModifiedAt: number;
     messages: ChatMessage[]; // This still uses ChatMessage, which is fine
+    activePersonaId?: string | null; // NEW
 }
 
 // *** REVISED: For Payload sent to main process for chat ***
@@ -85,7 +88,23 @@ export interface ElectronAPI {
     // Copy Text to Clipboard
     copyTextToClipboard: (text: string) => Promise<boolean>;
 
+    // --- NEW Persona Management Signatures ---
+    getPersonas: () => Promise<Persona[]>;
+    savePersona: (personaData: { id?: string; name: string; prompt: string }) => Promise<Persona | null>;
+    deletePersona: (personaId: string) => Promise<boolean>;
+    setChatSessionPersona: (sessionId: string, personaId: string | null) => Promise<boolean>; // NEW
+
     // REMOVE OLD HISTORY HANDLERS (saveChatHistory, loadChatHistory are now obsolete)
+}
+
+// Add Persona interface if not already present (it was added in index.ts, ensure consistency)
+// It's already defined above from previous steps, but ensure it's exported or accessible.
+// For preload, it's fine to redefine or ensure it's exported from a shared types if we had one.
+// Re-affirming its presence here for clarity in this step.
+export interface Persona { // Ensure export if it's to be used by renderer.ts type import
+    id: string;
+    name: string;
+    prompt: string;
 }
 
 
@@ -171,6 +190,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     copyTextToClipboard: (text: string) => {
         console.log('Preload: Sending handle-copy-to-clipboard request');
         return ipcRenderer.invoke('handle-copy-to-clipboard', text);
+    },
+
+    // --- NEW Persona Management Mappings ---
+    getPersonas: () => {
+        console.log('Preload: Sending handle-get-personas request');
+        return ipcRenderer.invoke('handle-get-personas');
+    },
+    savePersona: (personaData: { id?: string; name: string; prompt: string }) => {
+        console.log('Preload: Sending handle-save-persona request');
+        return ipcRenderer.invoke('handle-save-persona', personaData);
+    },
+    deletePersona: (personaId: string) => {
+        console.log('Preload: Sending handle-delete-persona request');
+        return ipcRenderer.invoke('handle-delete-persona', personaId);
+    },
+    setChatSessionPersona: (sessionId: string, personaId: string | null) => { // NEW
+        console.log(`Preload: Sending handle-set-chat-session-persona for session ${sessionId}`);
+        return ipcRenderer.invoke('handle-set-chat-session-persona', sessionId, personaId);
     }
 
     // REMOVE OLD MAPPINGS for saveChatHistory and loadChatHistory

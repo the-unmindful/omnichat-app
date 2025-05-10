@@ -669,8 +669,54 @@ body {
      background-color: #45a049;
 }
 
+.persona-form textarea { /* Specific styling for persona prompt textarea */
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-app);
+    font-family: var(--font-family-sans); /* Use sans-serif for prompts, or mono if preferred */
+    font-size: 0.95em;
+    line-height: 1.4;
+    min-height: 80px; /* Adjust as needed */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.persona-form textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+.persona-form button { /* General style for buttons in persona form */
+    padding: var(--spacing-sm) var(--spacing-lg);
+    cursor: pointer;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    margin-right: var(--spacing-sm); /* Space between buttons if multiple */
+}
+.persona-form button#save-persona-button {
+    background-color: var(--accent-primary); /* Green like enabled models, or primary blue */
+    color: white;
+}
+.persona-form button#save-persona-button:hover {
+    background-color: var(--accent-primary-hover);
+}
+.persona-form button#clear-persona-form-button {
+    background-color: var(--bg-sidebar); /* More subtle for clear/cancel */
+    color: var(--text-primary);
+    border: 1px solid var(--border-color-medium);
+}
+.persona-form button#clear-persona-form-button:hover {
+    background-color: var(--bg-hover-subtle);
+}
+
+
 /* Modal Lists */
-.api-key-list, .enabled-model-list {
+.api-key-list, .enabled-model-list, .persona-list {
     margin-top: var(--spacing-md);
     max-height: 200px;
     overflow-y: auto;
@@ -680,7 +726,7 @@ body {
     background-color: var(--bg-app);
 }
 
-.key-entry, .model-entry {
+.key-entry, .model-entry, .persona-entry {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -688,19 +734,25 @@ body {
     border-bottom: 1px solid var(--border-color-soft);
     font-size: 0.9em;
 }
-.key-entry:last-child, .model-entry:last-child {
+.key-entry:last-child, .model-entry:last-child, .persona-entry:last-child {
     border-bottom: none;
 }
 
-.key-info, .model-info {
+.key-info, .model-info, .persona-info {
     flex-grow: 1;
     margin-right: var(--spacing-md);
-    overflow: hidden;
+    overflow: hidden; /* For long names/prompts */
 }
+.persona-info .persona-name-display {
+    font-weight: 500;
+}
+/* Optional: Style for prompt snippet if we add it later */
+/* .persona-info .persona-prompt-snippet { display: block; font-size: 0.9em; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } */
 
-.key-info span, .model-info span {
+
+.key-info span, .model-info span, .persona-info span {
     margin-right: var(--spacing-md);
-    display: inline-block;
+    display: inline-block; /* or block if snippet is multiline */
     vertical-align: middle;
 }
 .key-info .key-value-masked { color: var(--text-secondary); font-style: italic; }
@@ -710,11 +762,11 @@ body {
 .model-info .model-key-link { color: var(--text-accent); font-size: 0.9em; }
 
 
-.key-actions, .model-actions {
+.key-actions, .model-actions, .persona-actions {
     flex-shrink: 0;
     white-space: nowrap;
 }
-.key-actions button, .model-actions button {
+.key-actions button, .model-actions button, .persona-actions button {
     margin-left: var(--spacing-sm);
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.9em;
@@ -724,10 +776,50 @@ body {
     transition: background-color 0.2s ease;
 }
 
-.copy-key-button { background-color: var(--accent-primary); color: var(--text-on-accent); }
-.copy-key-button:hover { background-color: var(--accent-primary-hover); }
-.delete-key-button, .delete-model-button { background-color: var(--accent-danger); color: white; }
-.delete-key-button:hover, .delete-model-button:hover { background-color: var(--accent-danger-hover); }
+/* Styling for the new inline confirm/cancel delete buttons */
+.confirm-delete-btn, .cancel-delete-btn {
+    background-color: transparent; /* Make them look more like icons if just text */
+    border: 1px solid transparent; /* Add border for hover/focus consistency */
+    padding: var(--spacing-xs); /* Minimal padding */
+    margin-left: var(--spacing-xs);
+    font-size: 1.1em; /* Make icons slightly larger */
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+}
+.confirm-delete-btn:hover, .cancel-delete-btn:hover {
+    background-color: var(--bg-hover-subtle);
+    border-color: var(--border-color-medium);
+}
+.confirm-delete-btn {
+    color: var(--accent-primary); /* Green or blue for confirm */
+}
+.confirm-delete-btn:hover {
+    color: var(--accent-primary-hover);
+}
+.cancel-delete-btn {
+    color: var(--accent-danger); /* Red for cancel */
+}
+.cancel-delete-btn:hover {
+    color: var(--accent-danger-hover);
+}
+
+/* Specific styling for chat list delete confirm/cancel buttons */
+.delete-chat-confirm-btn, .delete-chat-cancel-btn {
+    float: right;
+    margin-left: var(--spacing-xs); /* Keep a small margin */
+}
+/* Ensure they don't inherit too much padding if not desired, or adjust as needed */
+.delete-chat-confirm-btn, .delete-chat-cancel-btn {
+    padding: 2px 4px; /* Smaller padding for these icon-like buttons in the list */
+    font-size: 1em; /* Adjust if they appear too large/small */
+}
+
+
+.copy-key-button, .edit-persona-button { background-color: var(--accent-primary); color: var(--text-on-accent); }
+.copy-key-button:hover, .edit-persona-button:hover { background-color: var(--accent-primary-hover); }
+.delete-key-button, .delete-model-button, .delete-persona-button { background-color: var(--accent-danger); color: white; }
+.delete-key-button:hover, .delete-model-button:hover, .delete-persona-button:hover { background-color: var(--accent-danger-hover); }
 
 
 /* 10. Scrollbar Styling (Optional, Webkit specific) */
@@ -844,4 +936,50 @@ body {
 .message-content th {
     background-color: var(--bg-sidebar);
     font-weight: 600;
+}
+
+/* 12. Toast Notification Styling (NEW) */
+.toast-container {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000; /* Ensure it's above other content, including modals if necessary */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.toast-message {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    color: var(--text-on-accent); /* Default to white text, adjust per type */
+    font-size: 0.95em;
+    box-shadow: var(--shadow-md);
+    opacity: 0; /* Start hidden for fade-in */
+    transform: translateY(20px); /* Start slightly offset for slide-in */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    min-width: 250px; /* Ensure a decent minimum width */
+    text-align: center;
+}
+
+.toast-message.show { /* Class to trigger animation */
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-message.toast-success {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
+.toast-message.toast-error {
+    background-color: var(--accent-danger); /* Red */
+    color: white;
+}
+
+.toast-message.toast-info {
+    background-color: #2c3e50; /* Dark blue/grey */
+    color: white;
 }

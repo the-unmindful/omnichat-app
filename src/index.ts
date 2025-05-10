@@ -41,6 +41,8 @@ interface ChatMessage {
     content: string;
     modelUsed?: string;
     id?: string;
+    personaUsedId?: string | null;    // NEW: ID of persona active when message was generated
+    personaUsedName?: string | null;  // NEW: Name of persona active when message was generated
 }
 
 // *** NEW: Interface for a distinct Chat Session ***
@@ -50,6 +52,7 @@ interface ChatSession {
     createdAt: number;   // Timestamp of creation
     lastModifiedAt: number; // Timestamp of the last message or modification
     messages: ChatMessage[]; // Array of messages for this specific session
+    activePersonaId?: string | null; // NEW: ID of the persona active for this session
 }
 
 // *** MODIFIED: Payload sent from renderer for chat ***
@@ -59,12 +62,20 @@ interface ChatPayload {
     // apiKeyId is no longer needed here, it's looked up via modelEntryId
 }
 
+// *** NEW: Interface for Personas (System Prompts) ***
+interface Persona {
+    id: string;        // Unique identifier
+    name: string;      // User-defined name for the persona
+    prompt: string;    // The actual system prompt text
+    // Future: parameters?: ModelParameters; 
+}
+
 // *** MODIFIED: Define the overall schema structure for the store's data ***
 type SchemaType = {
     apiKeys: StoredApiKey[];
     enabledModels: EnabledModelEntry[]; // Added enabled models array
-    // chatHistory?: ChatMessage[]; // REMOVED old single history
     chatSessions?: ChatSession[];   // NEW: Array of chat sessions
+    personas?: Persona[];           // NEW: Array of personas
 };
 
 // --- Initialize electron-store ---
@@ -73,8 +84,8 @@ const store = new Store<SchemaType>({
     defaults: {
         apiKeys: [],
         enabledModels: [], // Initialize with empty array
-        // chatHistory: [] // REMOVED old default
-        chatSessions: []  // NEW default
+        chatSessions: [],  // NEW default
+        personas: []       // NEW default for personas
     },
 });
 
@@ -301,16 +312,103 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
                 const url = 'https://api.openai.com/v1/chat/completions'; const headers = { 'Authorization': `Bearer ${apiKey}` }; const data = { model: modelId, messages: formatHistoryForOpenAI(history), temperature: temperature, }; console.log(`Main: Calling OpenAI (${modelId}). History length: ${data.messages.length}`); const response = await axios.post(url, data, { headers }); responseContent = response.data.choices?.[0]?.message?.content?.trim(); if (!responseContent) { console.error("Main: OpenAI response format error or empty content", response.data); throw new Error("Received an unexpected response format from OpenAI."); }
                 break;
             }
-            case 'OpenRouter': { /* ... OpenRouter call logic using modelId ... */
-                const url = 'https://openrouter.ai/api/v1/chat/completions'; const headers = { 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'http://localhost', 'X-Title': 'OmniChat', }; const data = { model: modelId, messages: formatHistoryForOpenAI(history), temperature: temperature, }; console.log(`Main: Calling OpenRouter (${modelId}). History length: ${data.messages.length}`); const response = await axios.post(url, data, { headers }); responseContent = response.data.choices?.[0]?.message?.content?.trim(); if (!responseContent) { console.error("Main: OpenRouter response format error or empty content", response.data); throw new Error("Received an unexpected response format from OpenRouter."); }
+            case 'OpenRouter': { 
+                const url = 'https://openrouter.ai/api/v1/chat/completions'; 
+                const headers = { 
+                    'Authorization': `Bearer ${apiKey}`, 
+                    'HTTP-Referer': 'http://localhost', // Required by OpenRouter
+                    'X-Title': 'OmniChat',             // Optional: App name
+                }; 
+                const data = { 
+                    model: modelId, 
+                    messages: formatHistoryForOpenAI(history), 
+                    temperature: temperature, 
+                    // max_tokens: maxTokens, // Optional, OpenRouter might have its own defaults or model-specific limits
+                }; 
+                console.log(`Main: Calling OpenRouter (${modelId}). History length: ${data.messages.length}`); 
+                console.log('Main: OpenRouter - Sending messages payload:', JSON.stringify(data.messages, null, 2)); // ADDED LOG
+                const response = await axios.post(url, data, { headers }); 
+                
+                const choice = response.data.choices?.[0];
+                if (choice && choice.message) {
+                    // Log the entire message object to understand its structure
+                    console.log('Main: OpenRouter raw choice.message object:', JSON.stringify(choice.message, null, 2)); 
+
+                    if (typeof choice.message.content === 'string') {
+                        responseContent = choice.message.content.trim();
+                    } else if (typeof choice.message.text === 'string') { // Alternative check
+                        console.log('Main: OpenRouter using choice.message.text for content.');
+                        responseContent = choice.message.text.trim();
+                    } else {
+                        console.error("Main: OpenRouter - choice.message object does not contain a 'content' or 'text' string property. Full message object logged above.");
+                    }
+                }
+
+                if (!responseContent) { 
+                    console.error("Main: OpenRouter response format error or empty content after checks. Full response data:", JSON.stringify(response.data, null, 2)); 
+                    throw new Error("Received an unexpected response format or empty content from OpenRouter."); 
+                }
                 break;
             }
-            case 'Anthropic': { /* ... Anthropic call logic using modelId ... */
-                const url = 'https://api.anthropic.com/v1/messages'; const headers = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json', }; const data = { model: modelId, messages: formatHistoryForAnthropic(history), max_tokens: maxTokens, temperature: temperature, }; console.log(`Main: Calling Anthropic (${modelId}). History length: ${data.messages.length}`); const response = await axios.post(url, data, { headers }); responseContent = response.data.content?.[0]?.text?.trim(); if (!responseContent) { console.error("Main: Anthropic response format error or empty content", response.data); throw new Error("Received an unexpected response format from Anthropic."); }
+            case 'Anthropic': { 
+                const url = 'https://api.anthropic.com/v1/messages'; 
+                const headers = { 
+                    'x-api-key': apiKey, 
+                    'anthropic-version': '2023-06-01', 
+                    'Content-Type': 'application/json', 
+                }; 
+                const messagesForApi = formatHistoryForAnthropic(history); // Filters out system messages
+                const requestData: any = { // Use 'any' for requestData to dynamically add 'system'
+                    model: modelId, 
+                    messages: messagesForApi, 
+                    max_tokens: maxTokens, 
+                    temperature: temperature, 
+                }; 
+                // Check for and add system prompt from persona
+                if (history.length > 0 && history[0].role === 'system') {
+                    requestData.system = history[0].content;
+                    console.log(`Main: Anthropic - Using system prompt: "${history[0].content.substring(0,50)}..."`);
+                }
+                console.log(`Main: Calling Anthropic (${modelId}). Messages length: ${requestData.messages.length}, System prompt provided: ${!!requestData.system}`); 
+                const response = await axios.post(url, requestData, { headers }); 
+                responseContent = response.data.content?.[0]?.text?.trim(); 
+                if (responseContent === undefined || responseContent === null) { // Allow empty string
+                    console.error("Main: Anthropic response format error or no text content found", response.data); 
+                    throw new Error("Received an unexpected response format from Anthropic."); 
+                }
                 break;
              }
-             case 'Gemini': { /* ... Gemini call logic using modelId ... */
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`; const headers = { 'Content-Type': 'application/json' }; const data = { contents: formatHistoryForGemini(history), generationConfig: { temperature: temperature, maxOutputTokens: maxTokens, }, }; console.log(`Main: Calling Gemini (${modelId}). History length: ${data.contents.length}`); const response = await axios.post(url, data, { headers }); if (response.data.promptFeedback?.blockReason) { console.warn("Main: Gemini blocked prompt:", response.data.promptFeedback.blockReason); throw new Error(`Request blocked by Gemini for safety reasons: ${response.data.promptFeedback.blockReason}`); } if (response.data.candidates?.[0]?.finishReason === 'SAFETY') { console.warn("Main: Gemini blocked response for safety."); throw new Error("Response blocked by Gemini for safety reasons."); } responseContent = response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim(); if (!responseContent) { console.error("Main: Gemini response format error or empty content", response.data); throw new Error("Received an unexpected response format from Gemini."); }
+             case 'Gemini': { 
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`; 
+                const headers = { 'Content-Type': 'application/json' }; 
+                const contentsForApi = formatHistoryForGemini(history); // Filters out system messages
+                const requestData: any = { // Use 'any' for requestData to dynamically add 'system_instruction'
+                    contents: contentsForApi, 
+                    generationConfig: { 
+                        temperature: temperature, 
+                        maxOutputTokens: maxTokens, 
+                    }, 
+                };
+                // Check for and add system instruction from persona
+                if (history.length > 0 && history[0].role === 'system') {
+                    requestData.system_instruction = { parts: [{ text: history[0].content }] };
+                    console.log(`Main: Gemini - Using system instruction: "${history[0].content.substring(0,50)}..."`);
+                }
+                console.log(`Main: Calling Gemini (${modelId}). Contents length: ${requestData.contents.length}, System instruction provided: ${!!requestData.system_instruction}`); 
+                const response = await axios.post(url, requestData, { headers }); 
+                if (response.data.promptFeedback?.blockReason) { 
+                    console.warn("Main: Gemini blocked prompt:", response.data.promptFeedback.blockReason); 
+                    throw new Error(`Request blocked by Gemini for safety reasons: ${response.data.promptFeedback.blockReason}`); 
+                } 
+                if (response.data.candidates?.[0]?.finishReason === 'SAFETY') { 
+                    console.warn("Main: Gemini blocked response for safety."); 
+                    throw new Error("Response blocked by Gemini for safety reasons."); 
+                } 
+                responseContent = response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim(); 
+                if (responseContent === undefined || responseContent === null) { // Allow empty string
+                    console.error("Main: Gemini response format error or no text content found", response.data); 
+                    throw new Error("Received an unexpected response format from Gemini."); 
+                }
                 break;
              }
             default:
@@ -341,6 +439,7 @@ ipcMain.handle('create-new-chat-session', async (): Promise<Partial<ChatSession>
             createdAt: Date.now(),
             lastModifiedAt: Date.now(),
             messages: [],
+            activePersonaId: null, // Initialize with no persona
         };
         sessions.push(newSession);
         store.set('chatSessions', sessions);
@@ -368,6 +467,7 @@ ipcMain.handle('load-chat-sessions-metadata', async (): Promise<Partial<ChatSess
                 title: session.title,
                 createdAt: session.createdAt,
                 lastModifiedAt: session.lastModifiedAt,
+                activePersonaId: session.activePersonaId, // Include persona ID in metadata
             }))
             .sort((a, b) => b.lastModifiedAt - a.lastModifiedAt); // Sort by most recent
         console.log('Main: Loaded metadata for chat sessions. Count:', metadata.length);
@@ -498,6 +598,94 @@ ipcMain.handle('handle-copy-to-clipboard', async (event, textToCopy: string): Pr
         return true;
     } catch (error) {
         console.error('Main: Failed to copy text to clipboard:', error);
+        return false;
+    }
+});
+
+// -- Persona Management IPC Handlers --
+ipcMain.handle('handle-get-personas', async (): Promise<Persona[]> => {
+    console.log('Main: Handling get-personas request');
+    try {
+        const personas = store.get('personas', []);
+        console.log('Main: Loaded personas. Count:', personas.length);
+        return personas;
+    } catch (error) {
+        console.error('Main: Failed to get personas:', error);
+        return [];
+    }
+});
+
+ipcMain.handle('handle-save-persona', async (event, personaData: { id?: string; name: string; prompt: string }): Promise<Persona | null> => {
+    console.log('Main: Handling save-persona request for:', personaData.name);
+    try {
+        const personas = store.get('personas', []);
+        if (personaData.id) { // Existing persona: Update
+            const index = personas.findIndex(p => p.id === personaData.id);
+            if (index > -1) {
+                personas[index] = { ...personas[index], ...personaData };
+                store.set('personas', personas);
+                console.log('Main: Persona updated. ID:', personaData.id);
+                return personas[index];
+            } else {
+                console.warn('Main: Persona ID not found for update:', personaData.id);
+                // Optionally, create new if ID not found, or return error/null
+                // For now, let's treat it as "not found"
+                return null; 
+            }
+        } else { // New persona: Create
+            const newPersona: Persona = {
+                id: uuidv4(),
+                name: personaData.name,
+                prompt: personaData.prompt,
+            };
+            personas.push(newPersona);
+            store.set('personas', personas);
+            console.log('Main: New persona created. ID:', newPersona.id);
+            return newPersona;
+        }
+    } catch (error) {
+        console.error('Main: Failed to save persona:', error);
+        throw error; // Rethrow to be caught by renderer
+    }
+});
+
+ipcMain.handle('handle-delete-persona', async (event, personaId: string): Promise<boolean> => {
+    console.log('Main: Handling delete-persona request for ID:', personaId);
+    try {
+        let personas = store.get('personas', []);
+        const initialLength = personas.length;
+        personas = personas.filter(p => p.id !== personaId);
+        if (personas.length < initialLength) {
+            store.set('personas', personas);
+            console.log('Main: Persona deleted. ID:', personaId);
+            return true;
+        } else {
+            console.warn('Main: Persona not found for deletion. ID:', personaId);
+            return false; // Persona not found
+        }
+    } catch (error) {
+        console.error('Main: Failed to delete persona:', error);
+        return false;
+    }
+});
+
+ipcMain.handle('handle-set-chat-session-persona', async (event, sessionId: string, personaId: string | null): Promise<boolean> => {
+    console.log(`Main: Setting persona for session ${sessionId} to ${personaId || 'null'}`);
+    try {
+        const sessions = store.get('chatSessions', []);
+        const sessionIndex = sessions.findIndex(s => s.id === sessionId);
+        if (sessionIndex > -1) {
+            sessions[sessionIndex].activePersonaId = personaId;
+            sessions[sessionIndex].lastModifiedAt = Date.now(); // Update last modified as session data changed
+            store.set('chatSessions', sessions);
+            console.log(`Main: Persona ID ${personaId || 'null'} set for session ${sessionId}`);
+            return true;
+        } else {
+            console.warn(`Main: Session not found to set persona: ${sessionId}`);
+            return false;
+        }
+    } catch (error) {
+        console.error(`Main: Error setting persona for session ${sessionId}:`, error);
         return false;
     }
 });
