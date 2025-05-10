@@ -45,7 +45,13 @@
 
             <!-- Chat Input Area -->
             <div class="chat-input-area">
+                <div class="attachment-controls">
+                    <button id="attach-file-button" title="Attach File (TXT, HTML, MD)">📎</button>
+                </div>
                 <textarea id="message-input" placeholder="Type your message here..."></textarea>
+                <div id="selected-attachment-display" class="selected-attachment-display">
+                    <!-- Selected file name will appear here -->
+                </div>
                 <button id="send-button">Send</button>
             </div>
         </div>

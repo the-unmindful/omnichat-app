@@ -484,6 +484,7 @@ body {
     background-color: var(--bg-header-input);
     flex-shrink: 0;
     align-items: flex-end;
+    position: relative; /* Added for positioning context of selected-attachment-display */
 }
 
 .chat-input-area textarea {
@@ -527,6 +528,73 @@ body {
 .chat-input-area button#send-button:disabled {
     background-color: #a0cfff;
     cursor: not-allowed;
+}
+
+/* Attachment Controls Styling */
+.attachment-controls {
+    margin-right: var(--spacing-sm); /* Space between attach button and textarea */
+    display: flex;
+    align-items: center; /* Align button vertically if needed */
+}
+
+#attach-file-button {
+    background: none;
+    border: 1px solid var(--border-color-medium);
+    color: var(--text-secondary);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-lg); /* Match send button/textarea */
+    cursor: pointer;
+    font-size: 1.2em; /* Make icon a bit larger */
+    line-height: 1;
+    height: 44px; /* Match send button height */
+    width: 44px; /* Make it square */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#attach-file-button:hover {
+    background-color: var(--bg-hover-subtle);
+    border-color: var(--accent-primary);
+}
+
+.selected-attachment-display {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--bg-sidebar); /* Subtle background */
+    border-radius: var(--border-radius-sm);
+    display: none; /* Hidden by default, shown by JS */
+    align-items: center;
+    gap: var(--spacing-sm);
+    max-width: calc(100% - 50px); /* Ensure it doesn't overflow input area too much */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: absolute; /* Position it relative to chat-input-area */
+    bottom: calc(100% + 5px); /* Position above the textarea */
+    left: var(--spacing-lg); 
+    /* Adjust left/right/bottom as needed if textarea resizes or based on overall layout */
+    /* This positioning might need tweaking based on how textarea height changes */
+    /* Alternative: Place it statically between textarea and send button if simpler */
+}
+
+.selected-attachment-display span { /* For the filename */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.selected-attachment-display .clear-attachment-button {
+    background: none;
+    border: none;
+    color: var(--accent-danger);
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 0;
+    line-height: 1;
 }
 
 

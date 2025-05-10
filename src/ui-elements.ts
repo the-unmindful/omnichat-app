@@ -8,6 +8,10 @@ export const sendButton = document.getElementById('send-button') as HTMLButtonEl
 export const chatHeaderModelSpan = document.querySelector('.chat-header span') as HTMLSpanElement;
 export const exportChatButton = document.getElementById('export-chat-button') as HTMLButtonElement | null;
 
+// Attachment UI Elements (NEW)
+export const attachFileButton = document.getElementById('attach-file-button') as HTMLButtonElement | null;
+export const selectedAttachmentDisplay = document.getElementById('selected-attachment-display') as HTMLDivElement | null;
+
 // ## Sidebar Elements ##
 export const chatListUl = document.getElementById('chat-list') as HTMLUListElement | null;
 export const newChatButton = document.getElementById('new-chat-button') as HTMLButtonElement | null;

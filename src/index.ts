@@ -312,6 +312,12 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
     const history = payload.history;
 
     console.log(`Main: Preparing API call | Provider: ${provider} | Model ID: ${modelId} | API Key Starts With: ${apiKey.substring(0, 4)}...`);
+    // Log the actual content being sent for the last user message (which includes attachment text)
+    if (history.length > 0) {
+        const lastMessageContent = history[history.length -1].content;
+        console.log(`Main: Content for LLM (last user message): \n---\n${lastMessageContent}\n---`);
+    }
+
 
     // Basic configuration (can be expanded later)
     const temperature = 0.7;
@@ -759,6 +765,69 @@ ipcMain.handle('search-chats', async (event, searchTerm: string): Promise<ChatSe
         console.error('Main: Error during chat search:', error);
         // In case of error, return empty array or throw
         return []; // Or throw error;
+    }
+});
+
+
+// --- NEW Attachment IPC Handlers ---
+ipcMain.handle('handle-select-file', async (event): Promise<{ originalPath: string; name: string; type: string; size: number } | null> => {
+    console.log('Main: Handling select-file request');
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+    if (!focusedWindow) {
+        console.error('Main: No focused window to show open dialog.');
+        return null;
+    }
+    try {
+        const { canceled, filePaths } = await dialog.showOpenDialog(focusedWindow, {
+            title: 'Select File to Attach',
+            properties: ['openFile'],
+            filters: [
+                { name: 'Text Files', extensions: ['txt', 'html', 'htm', 'md'] },
+                // Later, add images: { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] },
+                // Later, add PDFs: { name: 'Documents', extensions: ['pdf'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        if (canceled || !filePaths || filePaths.length === 0) {
+            console.log('Main: File selection canceled by user.');
+            return null;
+        }
+
+        const filePath = filePaths[0];
+        const stats = await fsPromises.stat(filePath);
+        const fileType = path.extname(filePath).toLowerCase(); // Basic type from extension
+
+        console.log('Main: File selected:', filePath);
+        return {
+            originalPath: filePath,
+            name: path.basename(filePath),
+            type: fileType, // This is just extension, renderer might get more accurate MIME type if needed
+            size: stats.size
+        };
+
+    } catch (error) {
+        console.error('Main: Error during file selection:', error);
+        return null; // Or throw error to be caught by renderer
+    }
+});
+
+ipcMain.handle('handle-extract-text-from-file', async (event, originalPath: string, fileType: string): Promise<{ extractedText: string; error?: string }> => {
+    console.log(`Main: Handling extract-text-from-file for path: ${originalPath}, type: ${fileType}`);
+    try {
+        // For V1.5, we handle .txt, .html/.htm, and .md as plain text
+        if (fileType === '.txt' || fileType === '.html' || fileType === '.htm' || fileType === '.md') {
+            const textContent = await fsPromises.readFile(originalPath, 'utf8');
+            console.log(`Main: Extracted text from ${originalPath}. Length: ${textContent.length}`);
+            return { extractedText: textContent };
+        } else {
+            console.warn(`Main: Unsupported file type for text extraction: ${fileType}`);
+            return { extractedText: '', error: `Unsupported file type for text extraction: ${fileType}` };
+        }
+        // Later, add image OCR and PDF parsing here
+    } catch (error) {
+        console.error(`Main: Error extracting text from file ${originalPath}:`, error);
+        return { extractedText: '', error: `Failed to read file: ${error.message}` };
     }
 });
 

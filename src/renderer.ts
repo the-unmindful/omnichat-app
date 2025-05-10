@@ -1,20 +1,29 @@
 import './styles.css';
 import { marked } from 'marked'; // Import the marked library
-import { showToast } from './toast-notifications'; 
-import { 
+import { showToast } from './toast-notifications';
+import {
     modelSelector, chatMessagesDiv, messageInput, sendButton, chatHeaderModelSpan, exportChatButton,
     chatListUl, newChatButton, chatSearchInput, // Added chatSearchInput
     personaSelector,
     settingsModal, openSettingsButton, closeSettingsButton,
     addApiKeyButton, apiKeyListDiv, providerSelect, keyLabelInput, keyValueInput,
     addEnabledModelButton, enabledModelListDiv, enabledModelUserLabelInput, enabledModelProviderSelect, enabledModelIdInput, enabledModelApiKeyLinkSelect,
-    personaNameInput, personaPromptInput, savePersonaButton, clearPersonaFormButton, personaListDiv
+    personaNameInput, personaPromptInput, savePersonaButton, clearPersonaFormButton, personaListDiv,
+    attachFileButton, selectedAttachmentDisplay // NEW Attachment UI Elements
+    // messageInput is also used by attachment-handler, but already imported
 } from './ui-elements';
 import { openSettingsModal, closeSettingsModal } from './settings-modal-manager';
 import { renderApiKeysList, setupAddApiKeyButtonListeners as setupApiKeysAddListeners } from './settings-api-keys-ui'; // Aliased for clarity
 import { setupAddEnabledModelButtonListeners as setupEnabledModelsAddListeners } from './settings-enabled-models-ui'; // loadAndDisplayEnabledModelsFromUi removed
 import { setupPersonaManagementListeners } from './settings-personas-ui'; // Import new setup function
 import { setupChatSearch } from './chat-search-ui'; // Import chat search setup
+import {
+    setupAttachFileButtonListener,
+    getCurrentAttachmentInfo,
+    clearAttachmentSelection as clearAttachmentSelectionFromHandler,
+    isCurrentAttachmentContextCommitted, // NEW
+    markCurrentAttachmentContextAsCommitted // NEW
+} from './attachment-handler'; // NEW Import for attachment handling
 import type { ChatSessionMetadata as PreloadChatSessionMetadata } from './preload'; // Import for global API declaration
 
 // --- Interface Definitions (Matching preload.ts and index.ts) ---
@@ -97,6 +106,10 @@ declare global {
 
             // Search Functionality
             searchChats: (searchTerm: string) => Promise<PreloadChatSessionMetadata[]>;
+
+            // Attachment Handling (NEW)
+            selectFile: () => Promise<{ originalPath: string; name: string; type: string; size: number } | null>;
+            extractTextFromFile: (originalPath: string, fileType: string) => Promise<{ extractedText: string; error?: string }>;
         }
     }
 }
@@ -111,7 +124,7 @@ interface ChatSession { // Already exists
     activePersonaId?: string | null; // NEW
 }
 // Update ChatSessionMetadata to include activePersonaId
-type ChatSessionMetadata = Pick<ChatSession, 'id' | 'title' | 'createdAt' | 'lastModifiedAt' | 'activePersonaId'>; 
+type ChatSessionMetadata = Pick<ChatSession, 'id' | 'title' | 'createdAt' | 'lastModifiedAt' | 'activePersonaId'>;
 
 // Add Persona interface (mirrors preload.ts and index.ts)
 export interface Persona { // Added export
@@ -136,6 +149,8 @@ let currentConversationMessages: ChatMessage[] = []; // Holds messages for the a
 export let allPersonas: Persona[] = []; // Loaded in settings, can be reused here
 export let editingPersonaId: string | null = null; // For settings form
 let currentChatActivePersonaId: string | null = null; // For the active chat's selected persona
+
+// REMOVED: currentSelectedFileInfo is now in attachment-handler.ts
 
 
 // --- API Key Management Logic ---
@@ -166,7 +181,7 @@ export async function loadAndPopulateChatModelDropdown() {
         if (modelsForDropdown.length === 0) {
             modelSelector.disabled = true;
             modelSelector.options[0].text = "-- No Models Configured --";
-             updateChatHeaderModelLabel(null); 
+             updateChatHeaderModelLabel(null);
         } else {
             modelSelector.disabled = false;
             modelSelector.options[0].text = "-- Select Model --";
@@ -176,7 +191,7 @@ export async function loadAndPopulateChatModelDropdown() {
                 option.textContent = model.displayLabel;
                 modelSelector.appendChild(option);
             });
-             updateChatHeaderModelLabel(null); 
+             updateChatHeaderModelLabel(null);
         }
     } catch (error) {
         console.error('Renderer: Error fetching models for chat dropdown:', error);
@@ -190,7 +205,7 @@ function updateChatHeaderModelLabel(selectedOptionText: string | null) {
     if (!chatHeaderModelSpan) return;
     if (selectedOptionText) {
         chatHeaderModelSpan.textContent = `Model: ${selectedOptionText}`;
-        chatHeaderModelSpan.title = `Using configuration: ${selectedOptionText}`; 
+        chatHeaderModelSpan.title = `Using configuration: ${selectedOptionText}`;
     } else {
         chatHeaderModelSpan.textContent = `No Model Selected`;
         chatHeaderModelSpan.title = '';
@@ -199,27 +214,28 @@ function updateChatHeaderModelLabel(selectedOptionText: string | null) {
 
 if (modelSelector) {
     modelSelector.addEventListener('change', () => {
-        currentSelectedModelEntryId = modelSelector.value || null; 
+        currentSelectedModelEntryId = modelSelector.value || null;
         const selectedOptionText = modelSelector.value ? modelSelector.options[modelSelector.selectedIndex].text : null;
         console.log(`Renderer: Chat model selection changed to Entry ID: ${currentSelectedModelEntryId} (Label: ${selectedOptionText})`);
-         updateChatHeaderModelLabel(selectedOptionText); 
+         updateChatHeaderModelLabel(selectedOptionText);
     });
 }
 
 // --- Chat Message Display Logic ---
-async function addMessageToChat(message: ChatMessage) { 
+
+async function addMessageToChat(message: ChatMessage) {
     if (!chatMessagesDiv) return;
     const chatEntryDiv = document.createElement('div');
-    chatEntryDiv.classList.add('chat-entry', message.role); 
+    chatEntryDiv.classList.add('chat-entry', message.role);
     const messageElement = document.createElement('div');
-    messageElement.classList.add('message', message.role); 
+    messageElement.classList.add('message', message.role);
     if (message.id) { messageElement.id = message.id; }
-    chatEntryDiv.appendChild(messageElement); 
+    chatEntryDiv.appendChild(messageElement);
     try {
-        const htmlContent = await marked.parse(message.content || ''); 
+        const htmlContent = await marked.parse(message.content || '');
         const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content'; 
-        contentDiv.innerHTML = htmlContent; 
+        contentDiv.className = 'message-content';
+        contentDiv.innerHTML = htmlContent;
         messageElement.appendChild(contentDiv);
         if (message.role === 'assistant' && message.modelUsed) {
             const modelLabelDiv = document.createElement('div');
@@ -231,18 +247,18 @@ async function addMessageToChat(message: ChatMessage) {
             modelLabelDiv.textContent = labelText;
             chatEntryDiv.appendChild(modelLabelDiv);
         }
-        if (message.role === 'assistant') { 
+        if (message.role === 'assistant') {
             const copyButton = document.createElement('button');
-            copyButton.innerHTML = '📋'; 
+            copyButton.innerHTML = '📋';
             copyButton.className = 'copy-message-button';
             copyButton.title = 'Copy Q&A';
             const messageIndex = currentConversationMessages.findIndex(m => m === message);
             if (messageIndex !== -1) {
                 copyButton.addEventListener('click', async (e) => {
-                    e.stopPropagation(); 
+                    e.stopPropagation();
                     await handleCopyMessagePair(messageIndex, copyButton);
                 });
-                messageElement.appendChild(copyButton); 
+                messageElement.appendChild(copyButton);
             }
         }
     } catch (error) {
@@ -250,13 +266,13 @@ async function addMessageToChat(message: ChatMessage) {
         const errorContentDiv = document.createElement('div');
         errorContentDiv.className = 'message-content';
         errorContentDiv.textContent = `[Error displaying message] ${message.content}`;
-        messageElement.innerHTML = ''; 
+        messageElement.innerHTML = '';
         messageElement.appendChild(errorContentDiv);
         if (message.role === 'assistant' && message.modelUsed) {
              const modelLabelDiv = document.createElement('div');
-             modelLabelDiv.className = 'model-label-outside'; 
+             modelLabelDiv.className = 'model-label-outside';
              modelLabelDiv.textContent = `Model: ${message.modelUsed}`;
-             chatEntryDiv.appendChild(modelLabelDiv); 
+             chatEntryDiv.appendChild(modelLabelDiv);
         }
         if (message.role === 'assistant') {
             const copyButton = document.createElement('button');
@@ -273,7 +289,7 @@ async function addMessageToChat(message: ChatMessage) {
             }
         }
     }
-    chatMessagesDiv.appendChild(chatEntryDiv); 
+    chatMessagesDiv.appendChild(chatEntryDiv);
     if (chatMessagesDiv.contains(chatEntryDiv)) { chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; }
 }
 
@@ -329,68 +345,187 @@ async function handleCopyMessagePair(assistantMessageIndex: number, buttonElemen
     }
 }
 
-function removeMessageById(id: string) { 
+function removeMessageById(id: string) {
      const messageElement = document.getElementById(id); if (messageElement) { messageElement.remove(); }
 }
 
 // --- Send Message Logic ---
 async function handleSendMessage() {
-    const messageText = messageInput.value.trim();
-    if (!messageText) return;
-    if (!currentSelectedModelEntryId) {
-        showToast("Please select a configured model from the dropdown first.", "error");
+    if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.textContent = 'Processing...';
+    }
+
+    const typedMessageText = messageInput.value.trim();
+    let contentForLlm = typedMessageText;
+    let displayContent = typedMessageText;
+
+    const attachmentInfo = getCurrentAttachmentInfo();
+
+    // Step 1: Determine contentForLlm and displayContent based on attachment state
+    if (attachmentInfo) {
+        if (!isCurrentAttachmentContextCommitted()) {
+            // This is the first send with this attachment.
+            if (!window.electronAPI || !window.electronAPI.extractTextFromFile) {
+                showToast("Attachment feature is not available.", "error");
+                console.error("Renderer: electronAPI.extractTextFromFile is not defined.");
+                if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
+                return;
+            }
+            try {
+                console.log(`Renderer: Extracting text from ${attachmentInfo.name} (${attachmentInfo.type}) for initial commit.`);
+                const extractionResult = await window.electronAPI.extractTextFromFile(attachmentInfo.originalPath, attachmentInfo.type);
+
+                if (extractionResult.error) {
+                    showToast(`Error extracting text: ${extractionResult.error}`, "error");
+                    if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
+                    return;
+                }
+
+                if (extractionResult.extractedText && extractionResult.extractedText.trim() !== "") {
+                    contentForLlm = `[Content from attachment: ${attachmentInfo.name}]\n\n${extractionResult.extractedText.trim()}\n\n`;
+                    if (typedMessageText) {
+                        contentForLlm += `User's prompt:\n${typedMessageText}`;
+                    } else {
+                        // No typed text, but attachment has content.
+                        // For display, use a placeholder. contentForLlm has the attachment text.
+                        displayContent = `[Attachment: ${attachmentInfo.name} processed for context]`;
+                    }
+                    markCurrentAttachmentContextAsCommitted();
+                } else { // Attachment was empty or yielded no text
+                    if (!typedMessageText) { // Attachment empty AND no typed text
+                        showToast("Attached file is empty and no message typed.", "info");
+                        if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
+                        return;
+                    }
+                    // Attachment empty, but user typed something. contentForLlm is already typedMessageText.
+                    // Display content is also already typedMessageText.
+                    markCurrentAttachmentContextAsCommitted(); // Mark as "handled" so we don't try to re-process empty file
+                }
+            } catch (error) {
+                console.error("Renderer: Error during attachment processing:", error);
+                showToast("Error processing attachment.", "error");
+                if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
+                return;
+            }
+        } else {
+            // Attachment context is already committed. LLM will see it in history.
+            // contentForLlm is just the typedMessageText for this specific turn.
+            // displayContent is also just the typedMessageText.
+            console.log(`Renderer: Attachment ${attachmentInfo.name} context previously committed. Sending current typed prompt for LLM.`);
+            // No change to contentForLlm or displayContent needed here as they default to typedMessageText
+        }
+    }
+
+    // Step 2: Validate if there's anything to send to LLM.
+    // contentForLlm is what will be sent. If it's empty after all processing (e.g. empty typed text and empty file), there's nothing to send.
+    if (!contentForLlm.trim()) {
+        showToast("Please type a message or attach a file with actual content.", "info");
+        if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
         return;
     }
+
+    // Step 3: Check for model and session
+    if (!currentSelectedModelEntryId) {
+        showToast("Please select a model.", "error");
+        if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
+        return;
+    }
+
     if (!activeSessionId) {
-        const newSession = await handleNewChatButtonClick(); 
-        if (!newSession || !newSession.id) { 
-            // showToast("Could not create a new chat session. Please try again.", "error"); // Already handled in handleNewChatButtonClick
-            sendButton.disabled = false; sendButton.textContent = 'Send';
+        const newSession = await handleNewChatButtonClick();
+        if (!newSession || !newSession.id) {
+            if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
             return;
         }
     }
-    if (!activeSessionId) { 
-        showToast("No active chat session. Please create or select a chat.", "error");
-        sendButton.disabled = false; sendButton.textContent = 'Send';
+    if (!activeSessionId) {
+        showToast("No active chat session.", "error");
+        if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
         return;
     }
-    messageInput.value = ''; sendButton.disabled = true; sendButton.textContent = 'Sending...';
-    const userMessage: ChatMessage = { role: 'user', content: messageText };
-    currentConversationMessages.push(userMessage);
-    addMessageToChat(userMessage);
+
+    // Step 4: Prepare and send message
+    if (messageInput) messageInput.value = '';
+    if (sendButton) sendButton.textContent = 'Sending...'; // Button is already disabled
+
+    const userMessageForDisplay: ChatMessage = { role: 'user', content: displayContent };
+    currentConversationMessages.push(userMessageForDisplay);
+    addMessageToChat(userMessageForDisplay);
+
     try {
-        await window.electronAPI.addMessageToChatSession(activeSessionId, userMessage);
-        if (currentConversationMessages.length === 1) { 
+        await window.electronAPI.addMessageToChatSession(activeSessionId, userMessageForDisplay);
+        // Auto-title update logic (only if it's a "real" first user message, not just an attachment placeholder)
+        if ((currentConversationMessages.length === 1 ||
+            (currentConversationMessages.filter(m => m.role === 'user').length === 1)) &&
+            displayContent !== `[Attachment: ${attachmentInfo?.name || 'file'} processed for context]` &&
+            typedMessageText // Ensure there was actual typed text for the title
+            ) {
             const sessionToUpdate = allSessionsMetadata.find(s => s.id === activeSessionId);
-            if (sessionToUpdate && sessionToUpdate.title.startsWith('New Chat')) { 
+            if (sessionToUpdate && sessionToUpdate.title.startsWith('New Chat')) {
+                // The main process's addMessageToChatSession already updates the title based on the first user message.
+                // We just need to re-fetch metadata to reflect this in the UI.
                 const updatedMetadatas = await window.electronAPI.loadChatSessionsMetadata();
                 allSessionsMetadata = updatedMetadatas.map(s => ({id: s.id!, title: s.title!, createdAt: s.createdAt!, lastModifiedAt: s.lastModifiedAt!, activePersonaId: s.activePersonaId}));
-                renderChatList(); 
+                renderChatList();
             }
         }
     } catch (error) {
-        console.error(`Renderer: Error saving user message to session ${activeSessionId}:`, error);
+        console.error(`Renderer: Error saving user message (for display) to session ${activeSessionId}:`, error);
     }
+
     const thinkingMessageId = `thinking-${Date.now()}`;
     addMessageToChat({ role: 'assistant', content: '...', id: thinkingMessageId });
-    let historyForPayload = [...currentConversationMessages];
+
+    // Prepare historyForPayload for the LLM
+    // Deep clone currentConversationMessages, then replace the last user message's content with contentForLlm
+    let historyForPayload = JSON.parse(JSON.stringify(currentConversationMessages));
+    if (historyForPayload.length > 0) {
+        const lastMessageIndex = historyForPayload.length - 1;
+        // Ensure the last message is indeed the one we just added for display
+        if (historyForPayload[lastMessageIndex].role === 'user' && historyForPayload[lastMessageIndex].content === displayContent) {
+            historyForPayload[lastMessageIndex].content = contentForLlm;
+        } else {
+            // This case might occur if currentConversationMessages was somehow modified between adding userMessageForDisplay and here,
+            // or if displayContent was empty and userMessageForDisplay.content was also empty.
+            // For robustness, if the last message isn't the one we expect, log a warning and try to append.
+            // However, the primary logic relies on replacing the content of the already added (and displayed) message shell.
+            console.warn("Renderer: Last message in historyForPayload didn't match userMessageForDisplay as expected. This might indicate an issue or an empty typed message with an already committed attachment.");
+            // If the last message is user, still try to update it. If not, this indicates a more complex state issue.
+            if(historyForPayload[lastMessageIndex].role === 'user') {
+                 historyForPayload[lastMessageIndex].content = contentForLlm;
+            } else {
+                // Fallback: if the last message isn't a user message, or something is unexpected,
+                // we might push a new user message with contentForLlm.
+                // This path should be rare with the current logic.
+                console.warn("Renderer: Fallback - Pushing new user message to historyForPayload as last message was not the expected user message.");
+                historyForPayload.push({role: 'user', content: contentForLlm });
+            }
+        }
+    } else { // Should not happen if we add userMessageForDisplay first
+         historyForPayload.push({role: 'user', content: contentForLlm });
+    }
+
+    // Apply persona if active
     if (currentChatActivePersonaId) {
         const selectedPersona = allPersonas.find(p => p.id === currentChatActivePersonaId);
         if (selectedPersona) {
-            console.log(`Renderer: Applying persona "${selectedPersona.name}" with prompt: "${selectedPersona.prompt.substring(0,50)}..."`);
-            if (historyForPayload.length === 0 || 
-                !(historyForPayload[0].role === 'system' && historyForPayload[0].content === selectedPersona.prompt)) {
+            console.log(`Renderer: Applying persona "${selectedPersona.name}"`);
+            if (historyForPayload.length === 0 || !(historyForPayload[0].role === 'system' && historyForPayload[0].content === selectedPersona.prompt)) {
                 historyForPayload.unshift({ role: 'system', content: selectedPersona.prompt });
             }
         } else {
-            console.warn(`Renderer: Active persona ID ${currentChatActivePersonaId} not found in allPersonas list.`);
+            console.warn(`Renderer: Active persona ID ${currentChatActivePersonaId} not found.`);
         }
     }
+
     const payload: ChatPayload = {
-        modelEntryId: currentSelectedModelEntryId, 
-        history: historyForPayload, 
+        modelEntryId: currentSelectedModelEntryId,
+        history: historyForPayload,
     };
-    console.log(`Renderer: Sending message using Enabled Model Entry ID: ${payload.modelEntryId} for session ${activeSessionId}. History length: ${payload.history.length}`);
+
+    console.log(`Renderer: Sending message. LLM Payload History Length: ${payload.history.length}. Last user content for LLM (first 100 chars): "${contentForLlm.substring(0,100)}..."`);
+
     try {
         const assistantResponseContent = await window.electronAPI.sendChatMessage(payload);
         removeMessageById(thinkingMessageId);
@@ -398,21 +533,19 @@ async function handleSendMessage() {
             role: 'assistant',
             content: assistantResponseContent,
             modelUsed: modelSelector.options[modelSelector.selectedIndex]?.text || 'Unknown Model Config',
-            personaUsedId: currentChatActivePersonaId, 
-            personaUsedName: currentChatActivePersonaId 
-                ? (allPersonas.find(p => p.id === currentChatActivePersonaId)?.name || null) 
-                : null 
+            personaUsedId: currentChatActivePersonaId,
+            personaUsedName: currentChatActivePersonaId ? (allPersonas.find(p => p.id === currentChatActivePersonaId)?.name || null) : null
         };
         currentConversationMessages.push(assistantMessage);
         addMessageToChat(assistantMessage);
-        if (activeSessionId) { 
+        if (activeSessionId) {
             try {
                 await window.electronAPI.addMessageToChatSession(activeSessionId, assistantMessage);
                 const sessionMeta = allSessionsMetadata.find(s => s.id === activeSessionId);
                 if (sessionMeta) {
                     sessionMeta.lastModifiedAt = Date.now();
-                    allSessionsMetadata.sort((a, b) => b.lastModifiedAt - a.lastModifiedAt); 
-                    renderChatList(); 
+                    allSessionsMetadata.sort((a, b) => b.lastModifiedAt - a.lastModifiedAt);
+                    renderChatList();
                 }
             } catch (error) {
                 console.error(`Renderer: Error saving assistant message to session ${activeSessionId}:`, error);
@@ -423,8 +556,8 @@ async function handleSendMessage() {
         removeMessageById(thinkingMessageId);
         addMessageToChat({ role: 'error', content: `Error: ${error.message || 'Failed to get response.'}` });
     } finally {
-        sendButton.disabled = false; sendButton.textContent = 'Send'; 
-        if (messageInput) messageInput.focus(); 
+        if(sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
+        if (messageInput) messageInput.focus();
     }
 }
 
@@ -435,14 +568,18 @@ if (messageInput) {
     });
 }
 
+// REMOVED: Attachment handling functions (displaySelectedAttachment, clearAttachmentSelection, handleAttachFile)
+// are now in attachment-handler.ts
+
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', async () => {
     loadAndPopulateChatModelDropdown();
     await loadAndDisplayChatSessions(); // This will now also init displayedSessionsMetadata
     await populatePersonaSelector();
-    setupApiKeysAddListeners(); 
-    setupEnabledModelsAddListeners(); 
-    setupPersonaManagementListeners(); 
+    setupApiKeysAddListeners();
+    setupEnabledModelsAddListeners();
+    setupPersonaManagementListeners();
+    setupAttachFileButtonListener(); // NEW: Setup listener from attachment handler
     if (chatSearchInput) { // Setup chat search
         setupChatSearch(chatSearchInput, handleSearchResults);
     }
@@ -468,17 +605,17 @@ export async function populatePersonaSelector() {
     let personasToDisplay: Persona[] = [];
     try {
         personasToDisplay = await window.electronAPI.getPersonas();
-        allPersonas = personasToDisplay; 
+        allPersonas = personasToDisplay;
     } catch (error) {
         console.error("Renderer: Error fetching personas for selector:", error);
         personaSelector.innerHTML = '<option value="">Error loading personas</option>';
         personaSelector.disabled = true;
         return;
     }
-    const previousSelectedValue = personaSelector.value; 
-    personaSelector.innerHTML = ''; 
+    const previousSelectedValue = personaSelector.value;
+    personaSelector.innerHTML = '';
     const defaultOption = document.createElement('option');
-    defaultOption.value = ""; 
+    defaultOption.value = "";
     defaultOption.textContent = "-- No Persona --";
     personaSelector.appendChild(defaultOption);
     if (personasToDisplay.length > 0) {
@@ -494,7 +631,7 @@ export async function populatePersonaSelector() {
     } else if (previousSelectedValue && personasToDisplay.some(p => p.id === previousSelectedValue)) {
         personaSelector.value = previousSelectedValue;
     } else {
-        personaSelector.value = ""; 
+        personaSelector.value = "";
     }
     personaSelector.disabled = false;
     console.log("Renderer: Persona selector populated. Current value:", personaSelector.value);
@@ -502,7 +639,7 @@ export async function populatePersonaSelector() {
 
 if (personaSelector) {
     personaSelector.addEventListener('change', async () => {
-        const newSelectedPersonaId = personaSelector.value || null; 
+        const newSelectedPersonaId = personaSelector.value || null;
         console.log(`Renderer: Persona selection changed to ID: ${newSelectedPersonaId}`);
         currentChatActivePersonaId = newSelectedPersonaId;
         if (activeSessionId) {
@@ -512,21 +649,21 @@ if (personaSelector) {
                 if (success) {
                     console.log(`Renderer: Persona ID ${currentChatActivePersonaId || 'null'} saved for session ${activeSessionId}`);
                     const sessionMeta = allSessionsMetadata.find(s => s.id === activeSessionId);
-                    if (sessionMeta && 'activePersonaId' in sessionMeta) { 
+                    if (sessionMeta && 'activePersonaId' in sessionMeta) {
                         (sessionMeta as any).activePersonaId = currentChatActivePersonaId;
                     }
                 } else {
-                    console.warn("Renderer: IPC setChatSessionPersona returned false."); 
-                    showToast('Failed to set persona for this chat session.', 'error'); 
+                    console.warn("Renderer: IPC setChatSessionPersona returned false.");
+                    showToast('Failed to set persona for this chat session.', 'error');
                 }
             } catch (error) {
-                console.error('Renderer: Error setting persona for session via IPC:', error); 
+                console.error('Renderer: Error setting persona for session via IPC:', error);
                 showToast(`Error setting persona: ${error.message || 'Unknown error'}`, 'error');
             }
         } else {
             console.log("Renderer: No active chat session to save persona selection to.");
         }
-        if (messageInput) messageInput.focus(); 
+        if (messageInput) messageInput.focus();
     });
 }
 
@@ -540,23 +677,23 @@ async function loadAndDisplayChatSessions() {
         console.log("Renderer: Loading chat sessions metadata...");
         const sessions = await window.electronAPI.loadChatSessionsMetadata();
         // Ensure allSessionsMetadata uses PreloadChatSessionMetadata
-        allSessionsMetadata = sessions.map(s => ({ 
-            id: s.id!, 
-            title: s.title!, 
-            createdAt: s.createdAt!, 
+        allSessionsMetadata = sessions.map(s => ({
+            id: s.id!,
+            title: s.title!,
+            createdAt: s.createdAt!,
             lastModifiedAt: s.lastModifiedAt!,
-            activePersonaId: s.activePersonaId 
+            activePersonaId: s.activePersonaId
         } as PreloadChatSessionMetadata));
-        
+
         displayedSessionsMetadata = [...allSessionsMetadata]; // Initialize displayed list
-        
+
         if (chatSearchInput) chatSearchInput.value = ''; // Clear search on full load
 
         renderChatList(); // Will use displayedSessionsMetadata
 
         if (displayedSessionsMetadata.length > 0) {
             // Select the first chat from the potentially filtered (but initially full) list
-            await selectChatSession(displayedSessionsMetadata[0].id); 
+            await selectChatSession(displayedSessionsMetadata[0].id);
         } else {
             if (chatMessagesDiv) chatMessagesDiv.innerHTML = '<div class="message system">No chats yet. Start a new one!</div>';
             currentConversationMessages = [];
@@ -570,8 +707,8 @@ async function loadAndDisplayChatSessions() {
 
 function renderChatList() {
     if (!chatListUl) return;
-    chatListUl.innerHTML = ''; 
-    
+    chatListUl.innerHTML = '';
+
     const searchTerm = chatSearchInput ? chatSearchInput.value.trim() : "";
 
     if (displayedSessionsMetadata.length === 0) {
@@ -596,28 +733,28 @@ function renderChatList() {
             const currentLi = li as ListItemWithTimeout;
             if (currentLi.querySelector('input.rename-chat-input')) {
                 console.log("Renderer: Click ignored, rename in progress.");
-                return; 
+                return;
             }
-            if (currentLi._clickTimeoutId) { 
-                clearTimeout(currentLi._clickTimeoutId); 
+            if (currentLi._clickTimeoutId) {
+                clearTimeout(currentLi._clickTimeoutId);
             }
             currentLi._clickTimeoutId = window.setTimeout(() => {
                 console.log(`Renderer: Single click timeout fired for session ID: ${sessionMeta.id}`);
                 selectChatSession(sessionMeta.id);
-                currentLi._clickTimeoutId = undefined; 
-            }, 250); 
+                currentLi._clickTimeoutId = undefined;
+            }, 250);
         });
         li.addEventListener('dblclick', () => {
             const currentLi = li as ListItemWithTimeout;
             if (currentLi._clickTimeoutId) {
-                clearTimeout(currentLi._clickTimeoutId); 
+                clearTimeout(currentLi._clickTimeoutId);
                 currentLi._clickTimeoutId = undefined;
                 console.log(`Renderer: DBLCLICK - Cleared single click timeout for session ID: ${sessionMeta.id}`);
             }
             console.log(`Renderer: DBLCLICK processing for session ID: ${sessionMeta.id}, Title: "${sessionMeta.title}"`);
             if (currentLi.querySelector('input.rename-chat-input')) {
                 console.log("Renderer: Already in rename mode, exiting dblclick handler.");
-                return; 
+                return;
             }
             const currentTitle = sessionMeta.title;
             console.log("Renderer: currentTitle for rename:", currentTitle);
@@ -634,17 +771,17 @@ function renderChatList() {
             input.value = currentTitle;
             input.className = 'rename-chat-input';
             console.log("Renderer: Rename input created.");
-            let inputActive = true; 
+            let inputActive = true;
             const finishRename = async (saveIntent: boolean) => {
                 if (!inputActive) return;
-                inputActive = false; 
+                inputActive = false;
                 console.log(`Renderer: finishRename called. saveIntent: ${saveIntent}`);
                 const newTitle = input.value.trim();
-                input.remove(); 
+                input.remove();
                 childNodes.forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         (node as HTMLElement).style.display = '';
-                    } 
+                    }
                 });
                 if (saveIntent && newTitle && newTitle !== currentTitle) {
                     console.log(`Renderer: Attempting to save rename. New title: "${newTitle}"`);
@@ -673,15 +810,15 @@ function renderChatList() {
             };
             input.addEventListener('blur', () => {
                 console.log("Renderer: Rename input blurred.");
-                setTimeout(() => { 
-                    if (inputActive) finishRename(true); 
-                }, 100); 
+                setTimeout(() => {
+                    if (inputActive) finishRename(true);
+                }, 100);
             });
             input.addEventListener('keydown', (e: KeyboardEvent) => {
                 console.log(`Renderer: Keydown in rename input: ${e.key}`);
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (inputActive) finishRename(true); 
+                    if (inputActive) finishRename(true);
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     if (inputActive) finishRename(false);
@@ -693,27 +830,27 @@ function renderChatList() {
             } else {
                 li.appendChild(input);
             }
-            setTimeout(() => { 
+            setTimeout(() => {
                 input.focus();
                 input.select();
                 console.log("Renderer: Rename input appended and focused.");
             },0);
         });
         const deleteButton = document.createElement('button');
-        deleteButton.textContent = '🗑️'; 
+        deleteButton.textContent = '🗑️';
         deleteButton.classList.add('delete-chat-button');
         deleteButton.setAttribute('title', 'Delete Chat');
         deleteButton.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            const actionsContainer = li; 
+            e.stopPropagation();
+            const actionsContainer = li;
             deleteButton.style.display = 'none';
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = '✔️';
-            confirmBtn.className = 'confirm-delete-btn delete-chat-confirm-btn'; 
+            confirmBtn.className = 'confirm-delete-btn delete-chat-confirm-btn';
             confirmBtn.title = 'Confirm Delete Chat';
             const cancelBtn = document.createElement('button');
             cancelBtn.textContent = '❌';
-            cancelBtn.className = 'cancel-delete-btn delete-chat-cancel-btn'; 
+            cancelBtn.className = 'cancel-delete-btn delete-chat-cancel-btn';
             cancelBtn.title = 'Cancel';
             const restoreOriginalButtons = () => {
                 confirmBtn.remove();
@@ -729,7 +866,7 @@ function renderChatList() {
                     const success = await window.electronAPI.deleteChatSession(sessionMeta.id);
                     if (success) {
                         showToast(`Chat "${sessionMeta.title}" deleted.`, 'success');
-                        loadAndDisplayChatSessions(); 
+                        loadAndDisplayChatSessions();
                     } else {
                         showToast('Failed to delete chat session.', 'error');
                         restoreOriginalButtons();
@@ -763,7 +900,7 @@ async function selectChatSession(sessionId: string) {
         const sessionMetadata = allSessionsMetadata.find(s => s.id === sessionId); // Find from the master list to get full details if needed
         currentChatActivePersonaId = sessionMetadata?.activePersonaId || null;
         if (personaSelector) {
-            personaSelector.value = currentChatActivePersonaId || ""; 
+            personaSelector.value = currentChatActivePersonaId || "";
             console.log(`Renderer: Persona selector set to ${personaSelector.value} for session ${sessionId}`);
         } else {
             console.warn("Renderer: Persona selector not found when trying to set for session.");
@@ -772,15 +909,15 @@ async function selectChatSession(sessionId: string) {
         currentConversationMessages = messages;
         activeSessionId = sessionId;
         if (chatMessagesDiv) {
-            chatMessagesDiv.innerHTML = ''; 
+            chatMessagesDiv.innerHTML = '';
             if (currentConversationMessages.length === 0) {
                 addMessageToChat({role: 'system', content: 'This chat is empty. Send a message to start!'});
             } else {
                 currentConversationMessages.forEach(msg => addMessageToChat(msg));
             }
         }
-        renderChatList(); 
-        if (messageInput) messageInput.focus(); 
+        renderChatList();
+        if (messageInput) messageInput.focus();
     } catch (error) {
         console.error(`Renderer: Error loading messages for session ${sessionId}:`, error);
         if (chatMessagesDiv) chatMessagesDiv.innerHTML = `<div class="message error">Error loading chat: ${error.message}</div>`;
@@ -803,19 +940,19 @@ async function handleNewChatButtonClick(): Promise<PreloadChatSessionMetadata | 
                 title: newSessionMetadataPartial.title || 'Untitled Chat',
                 createdAt: newSessionMetadataPartial.createdAt || Date.now(),
                 lastModifiedAt: newSessionMetadataPartial.lastModifiedAt || Date.now(),
-                activePersonaId: newSessionMetadataPartial.activePersonaId || null 
+                activePersonaId: newSessionMetadataPartial.activePersonaId || null
             };
             allSessionsMetadata.unshift(newSessionMetadata);
-            
+
             // Clear search when creating a new chat
             if (chatSearchInput) chatSearchInput.value = "";
             displayedSessionsMetadata = [...allSessionsMetadata]; // Reset to show all
 
-            renderChatList(); 
+            renderChatList();
             await selectChatSession(newSessionMetadata.id); // This will also ensure displayedSessions is reset if search was active
             if (messageInput) {
-                messageInput.value = ''; 
-                messageInput.focus(); 
+                messageInput.value = '';
+                messageInput.focus();
             }
             return newSessionMetadata;
         } else {
@@ -835,6 +972,7 @@ if (newChatButton) {
 }
 
 // --- Export Chat Logic ---
+
 async function handleExportChat() {
     if (!activeSessionId || currentConversationMessages.length === 0) {
         showToast("No active chat or no messages to export.", "info");
@@ -846,13 +984,13 @@ async function handleExportChat() {
     if (currentChatActivePersonaId) {
         const activePersona = allPersonas.find(p => p.id === currentChatActivePersonaId);
         if (activePersona) {
-            markdownContent += `## Persona: ${activePersona.name}\n\n**System Prompt:**\n\n${activePersona.prompt.replace(/\n/g, '\n\n')}\n\n---\n\n`; 
+            markdownContent += `## Persona: ${activePersona.name}\n\n**System Prompt:**\n\n${activePersona.prompt.replace(/\n/g, '\n\n')}\n\n---\n\n`;
         } else {
             console.warn(`Renderer (Export): Active persona ID ${currentChatActivePersonaId} not found in allPersonas. Not adding to export.`);
         }
     }
     currentConversationMessages.forEach(msg => {
-        if (msg.role === 'system') { 
+        if (msg.role === 'system') {
             markdownContent += `*System (Chat Internal): ${msg.content.replace(/\n/g, '\n\n')}*\n\n---\n\n`;
             return;
         }
@@ -866,13 +1004,13 @@ async function handleExportChat() {
             if (msg.modelUsed) {
                 assistantHeader += ` (Model: ${msg.modelUsed}`;
             }
-            if (currentChatActivePersonaId) { 
+            if (currentChatActivePersonaId) {
                 const persona = allPersonas.find(p => p.id === currentChatActivePersonaId);
                 if (persona) {
                     assistantHeader += assistantHeader ? `, Persona: ${persona.name}` : ` (Persona: ${persona.name}`;
                 }
             }
-            if (assistantHeader) { 
+            if (assistantHeader) {
                 assistantHeader += ')';
             }
             markdownContent += assistantHeader;
@@ -885,7 +1023,7 @@ async function handleExportChat() {
     try {
         const result = await window.electronAPI.exportChatToFile(markdownContent, suggestedFilename);
         if (result.success && result.filePath) {
-            showToast(`Chat exported successfully to: ${result.filePath}`, 'success', 5000); 
+            showToast(`Chat exported successfully to: ${result.filePath}`, 'success', 5000);
         } else if (result.error) {
             showToast(`Failed to export chat: ${result.error}`, 'error');
         } else {

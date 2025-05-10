@@ -98,6 +98,10 @@ export interface ElectronAPI {
 
     // --- NEW Search Functionality ---
     searchChats: (searchTerm: string) => Promise<ChatSessionMetadata[]>; // Returns array of session metadata
+
+    // --- NEW Attachment Handling ---
+    selectFile: () => Promise<{ originalPath: string; name: string; type: string; size: number } | null>;
+    extractTextFromFile: (originalPath: string, fileType: string) => Promise<{ extractedText: string; error?: string }>;
 }
 
 // Define ChatSessionMetadata here for preload's use, mirroring renderer.ts
@@ -227,6 +231,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     searchChats: (searchTerm: string) => {
         console.log(`Preload: Sending search-chats request with term: "${searchTerm}"`);
         return ipcRenderer.invoke('search-chats', searchTerm);
+    },
+
+    // --- NEW Attachment Handling Mappings ---
+    selectFile: () => {
+        console.log('Preload: Sending handle-select-file request');
+        return ipcRenderer.invoke('handle-select-file');
+    },
+    extractTextFromFile: (originalPath: string, fileType: string) => {
+        console.log(`Preload: Sending handle-extract-text-from-file request for path: ${originalPath}`);
+        return ipcRenderer.invoke('handle-extract-text-from-file', originalPath, fileType);
     }
 
     // REMOVE OLD MAPPINGS for saveChatHistory and loadChatHistory
