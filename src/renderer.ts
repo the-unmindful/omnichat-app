@@ -890,6 +890,8 @@ function renderChatList() {
 }
 
 async function selectChatSession(sessionId: string) {
+    clearAttachmentSelectionFromHandler(); // Clear any active attachment
+
     if (!sessionId) return;
     console.log(`Renderer: Selecting chat session ${sessionId}`);
     try {
