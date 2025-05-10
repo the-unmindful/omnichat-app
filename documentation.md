@@ -129,8 +129,20 @@ This section outlines a plan for the next set of major features to improve chat 
 
 *   **Platform:** Desktop Application (Windows, macOS, Linux via Electron).
 *   **Framework:** Electron (using Node.js, HTML, CSS, TypeScript).
-*   **UI:** Vanilla TypeScript, HTML, and CSS for the renderer process. No major frontend framework (like React, Vue, Svelte) is currently used.
-*   **State Management:** Primarily managed using module-level variables within `src/renderer.ts`.
+*   **UI (Renderer Process):**
+    *   The main application UI is built with vanilla TypeScript, HTML, and CSS. No major frontend framework (like React, Vue, Svelte) is currently used.
+    *   The settings panel UI has been refactored into several distinct modules for better organization and maintainability (see "Modular UI Components" below).
+    *   `src/renderer.ts`: Serves as the main script for the renderer process. It initializes the primary chat interface, manages chat session logic, handles core application event listeners, and orchestrates the various UI modules.
+*   **Modular UI Components (Renderer Process):**
+    *   `src/toast-notifications.ts`: Manages the display of non-blocking toast notifications for user feedback.
+    *   `src/ui-elements.ts`: Provides centralized definitions and selectors for common HTML UI elements used across different modules.
+    *   `src/settings-modal-manager.ts`: Handles the opening/closing logic for the main settings modal and coordinates data loading for its different panes.
+    *   `src/settings-api-keys-ui.ts`: Manages all UI aspects and logic related to API key configuration (adding, listing, deleting, copying).
+    *   `src/settings-enabled-models-ui.ts`: Manages the UI and logic for configuring "Enabled Models" that link specific model IDs to API keys.
+    *   `src/settings-personas-ui.ts`: Manages the UI and logic for creating, editing, and deleting user-defined Personas (custom system prompts).
+*   **State Management:**
+    *   Global application state (e.g., active chat session, cached API keys, list of personas) is primarily managed using exported module-level variables within `src/renderer.ts`.
+    *   The new settings UI modules import and interact with this shared state as needed. Future refactoring may introduce a more dedicated state management solution.
 *   **API Integration:** Direct `axios` calls to LLM provider APIs, with provider-specific formatting logic in `src/index.ts`.
 *   **Local Storage:** `electron-store` (version 8.1.0) is used for all persistent data, storing it in a JSON file. This includes:
     *   API Keys (values are base64 encoded, not fully encrypted).

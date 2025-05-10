@@ -1,14 +1,28 @@
 import './styles.css';
 import { marked } from 'marked'; // Import the marked library
+import { showToast } from './toast-notifications'; 
+import { 
+    modelSelector, chatMessagesDiv, messageInput, sendButton, chatHeaderModelSpan, exportChatButton,
+    chatListUl, newChatButton,
+    personaSelector,
+    settingsModal, openSettingsButton, closeSettingsButton,
+    addApiKeyButton, apiKeyListDiv, providerSelect, keyLabelInput, keyValueInput,
+    addEnabledModelButton, enabledModelListDiv, enabledModelUserLabelInput, enabledModelProviderSelect, enabledModelIdInput, enabledModelApiKeyLinkSelect,
+    personaNameInput, personaPromptInput, savePersonaButton, clearPersonaFormButton, personaListDiv
+} from './ui-elements';
+import { openSettingsModal, closeSettingsModal } from './settings-modal-manager';
+import { renderApiKeysList, setupAddApiKeyButtonListeners as setupApiKeysAddListeners } from './settings-api-keys-ui'; // Aliased for clarity
+import { setupAddEnabledModelButtonListeners as setupEnabledModelsAddListeners } from './settings-enabled-models-ui'; // loadAndDisplayEnabledModelsFromUi removed
+import { setupPersonaManagementListeners } from './settings-personas-ui'; // Import new setup function
 
 // --- Interface Definitions (Matching preload.ts and index.ts) ---
-interface ApiKeyEntry {
+export interface ApiKeyEntry {
     id: string;
     provider: string;
     label: string;
 }
 
-interface EnabledModelEntry {
+export interface EnabledModelEntry { // Added export
     modelEntryId: string;
     userLabel: string;
     provider: string;
@@ -95,62 +109,17 @@ interface ChatSession { // Already exists
 type ChatSessionMetadata = Pick<ChatSession, 'id' | 'title' | 'createdAt' | 'lastModifiedAt' | 'activePersonaId'>; 
 
 // Add Persona interface (mirrors preload.ts and index.ts)
-interface Persona {
+export interface Persona { // Added export
     id: string;
     name: string;
     prompt: string;
 }
 
-console.log('👋 Renderer script loaded (Refactored).');
-
-// --- DOM Element References ---
-
-// ## Main Chat UI Elements ##
-const modelSelector = document.getElementById('model-selector') as HTMLSelectElement;
-const chatMessagesDiv = document.getElementById('chat-messages');
-const messageInput = document.getElementById('message-input') as HTMLTextAreaElement;
-const sendButton = document.getElementById('send-button') as HTMLButtonElement;
-const chatHeaderModelSpan = document.querySelector('.chat-header span') as HTMLSpanElement;
-const exportChatButton = document.getElementById('export-chat-button') as HTMLButtonElement | null; // Added
-
-// ## Sidebar Elements ##
-const chatListUl = document.getElementById('chat-list') as HTMLUListElement | null; // Added
-const newChatButton = document.getElementById('new-chat-button') as HTMLButtonElement | null; // Added
-
-// ## Main Chat UI Elements ## (Continued)
-const personaSelector = document.getElementById('persona-selector') as HTMLSelectElement | null; // NEW
-
-// ## Settings Modal Elements ##
-const settingsModal = document.getElementById('settings-modal') as HTMLDivElement;
-const openSettingsButton = document.getElementById('open-settings-button');
-const closeSettingsButton = document.getElementById('close-settings-button');
-
-// # Settings - API Keys Section #
-const addApiKeyButton = document.getElementById('add-api-key-button') as HTMLButtonElement;
-const apiKeyListDiv = document.getElementById('api-key-list');
-const providerSelect = document.getElementById('api-provider') as HTMLSelectElement;
-const keyLabelInput = document.getElementById('api-key-label') as HTMLInputElement;
-const keyValueInput = document.getElementById('api-key-value') as HTMLInputElement;
-
-// # Settings - Enabled Models Section #
-const addEnabledModelButton = document.getElementById('add-enabled-model-button') as HTMLButtonElement;
-const enabledModelListDiv = document.getElementById('enabled-model-list');
-const enabledModelUserLabelInput = document.getElementById('enabled-model-user-label') as HTMLInputElement;
-const enabledModelProviderSelect = document.getElementById('enabled-model-provider') as HTMLSelectElement;
-const enabledModelIdInput = document.getElementById('enabled-model-id') as HTMLInputElement;
-const enabledModelApiKeyLinkSelect = document.getElementById('enabled-model-api-key-link') as HTMLSelectElement;
-
-// # Settings - Persona Management Section (NEW) #
-const personaNameInput = document.getElementById('persona-name-input') as HTMLInputElement | null;
-const personaPromptInput = document.getElementById('persona-prompt-input') as HTMLTextAreaElement | null;
-const savePersonaButton = document.getElementById('save-persona-button') as HTMLButtonElement | null;
-const clearPersonaFormButton = document.getElementById('clear-persona-form-button') as HTMLButtonElement | null;
-const personaListDiv = document.getElementById('persona-list-div') as HTMLDivElement | null;
-
+console.log('👋 Renderer script loaded (Refactored with UI elements and Toast module).');
 
 // --- State Variables ---
 let currentSelectedModelEntryId: string | null = null; // Store the ID of the selected enabled model config
-let cachedApiKeys: ApiKeyEntry[] = []; // Cache keys for populating dropdowns
+export let cachedApiKeys: ApiKeyEntry[] = []; // Cache keys for populating dropdowns
 
 // NEW State Variables for Multi-Session Management
 let allSessionsMetadata: ChatSessionMetadata[] = [];
@@ -158,348 +127,30 @@ let activeSessionId: string | null = null;
 let currentConversationMessages: ChatMessage[] = []; // Holds messages for the activeSessionId
 
 // NEW State Variables for Persona Management
-let allPersonas: Persona[] = []; // Loaded in settings, can be reused here
-let editingPersonaId: string | null = null; // For settings form
+export let allPersonas: Persona[] = []; // Loaded in settings, can be reused here
+export let editingPersonaId: string | null = null; // For settings form
 let currentChatActivePersonaId: string | null = null; // For the active chat's selected persona
 
 
-// --- Toast Notification Functionality (NEW) ---
-const toastContainer = document.getElementById('toast-notification-container');
-
-function showToast(message: string, type: 'success' | 'error' | 'info' = 'info', duration: number = 3000) {
-    if (!toastContainer) {
-        console.error("Toast container not found. Cannot display toast:", message);
-        console.log(`Toast (${type}): ${message}`); 
-        return;
-    }
-
-    const toast = document.createElement('div');
-    toast.className = `toast-message toast-${type}`;
-    toast.textContent = message;
-
-    toastContainer.appendChild(toast);
-
-    requestAnimationFrame(() => {
-        toast.classList.add('show');
-    });
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-        toast.addEventListener('transitionend', () => {
-            if (toast.parentNode) { 
-                toast.remove();
-            }
-        }, { once: true });
-        setTimeout(() => {
-             if (toast.parentNode) toast.remove();
-        }, duration + 500); 
-    }, duration);
-}
-
 // --- API Key Management Logic ---
-
-async function loadAndDisplayApiKeys() {
-    console.log("Renderer: Requesting API keys...");
-    if (!apiKeyListDiv) return;
-    try {
-        cachedApiKeys = await window.electronAPI.getApiKeys(); 
-        console.log("Renderer: Received API keys", cachedApiKeys.length);
-        displayApiKeys(cachedApiKeys);
-        populateApiKeyLinkingDropdown(cachedApiKeys); 
-    } catch (error) {
-        console.error("Renderer: Error fetching API keys:", error);
-        apiKeyListDiv.innerHTML = '<p class="error-message">Error loading API keys.</p>';
-        populateApiKeyLinkingDropdown([]); 
-    }
-}
-
-function displayApiKeys(keys: ApiKeyEntry[]) { 
-    if (!apiKeyListDiv) return;
-    apiKeyListDiv.innerHTML = '';
-    if (!keys || keys.length === 0) {
-        apiKeyListDiv.innerHTML = '<p>No keys saved yet.</p>'; return;
-    }
-    keys.forEach(key => {
-        const keyEntry = document.createElement('div');
-        keyEntry.className = 'key-entry'; keyEntry.setAttribute('data-key-id', key.id);
-         keyEntry.innerHTML = `
-            <div class="key-info">
-                <span>${key.provider}</span>
-                <span>${key.label || '(No Label)'}</span>
-                <span class="key-value-masked">[Key Saved]</span>
-            </div>
-            <div class="key-actions">
-                <button class="copy-key-button" title="Copy Key Value">Copy</button>
-                <button class="delete-key-button" title="Delete Key">Delete</button>
-            </div>
-        `;
-        apiKeyListDiv.appendChild(keyEntry);
-        const copyButton = keyEntry.querySelector('.copy-key-button') as HTMLButtonElement;
-        const deleteButton = keyEntry.querySelector('.delete-key-button') as HTMLButtonElement;
-         if (copyButton) { copyButton.addEventListener('click', async () => { 
-             console.log(`Renderer: Requesting copy for key ID: ${key.id}`); copyButton.disabled = true; const originalText = copyButton.textContent; 
-             try { 
-                 const success = await window.electronAPI.copyApiKey(key.id); 
-                 if (success) { 
-                     showToast('API Key copied to clipboard!', 'success', 1500); 
-                     copyButton.textContent = 'Copied!'; 
-                     setTimeout(() => { if (copyButton) { copyButton.textContent = originalText; copyButton.disabled = false; }}, 1500); 
-                 } else { 
-                     showToast('Failed to copy API key.', 'error'); 
-                     if (copyButton) { copyButton.disabled = false; }
-                 } 
-             } catch (error) { 
-                 console.error('Renderer: Error calling copyApiKey:', error); 
-                 showToast(`Error copying API key: ${error.message || 'Unknown error'}`, 'error'); 
-                 if (copyButton) { copyButton.textContent = originalText; copyButton.disabled = false; } 
-             }
-         });}
-        if (deleteButton) {
-            deleteButton.addEventListener('click', () => {
-                const actionsDiv = deleteButton.parentElement; 
-                if (!actionsDiv) return;
-                deleteButton.style.display = 'none';
-                const confirmBtn = document.createElement('button');
-                confirmBtn.textContent = '✔️'; 
-                confirmBtn.className = 'confirm-delete-btn'; 
-                confirmBtn.title = 'Confirm Delete';
-                const cancelBtn = document.createElement('button');
-                cancelBtn.textContent = '❌'; 
-                cancelBtn.className = 'cancel-delete-btn'; 
-                cancelBtn.title = 'Cancel Delete';
-                const restoreOriginalButton = () => {
-                    confirmBtn.remove();
-                    cancelBtn.remove();
-                    deleteButton.style.display = ''; 
-                };
-                confirmBtn.addEventListener('click', async () => {
-                    console.log(`Renderer: Confirming delete for key ID: ${key.id}`);
-                    confirmBtn.disabled = true;
-                    cancelBtn.disabled = true;
-                    try {
-                        const success = await window.electronAPI.deleteApiKey(key.id);
-                        if (success) {
-                            showToast(`API Key "${key.label}" deleted.`, 'success');
-                            loadAndDisplayApiKeys();
-                            loadAndDisplayEnabledModels();
-                            loadAndPopulateChatModelDropdown();
-                        } else {
-                            showToast('Failed to delete API key.', 'error');
-                            restoreOriginalButton(); 
-                        }
-                    } catch (error) {
-                        console.error('Renderer: Error calling deleteApiKey:', error);
-                        showToast(`Error deleting API key: ${error.message || 'Unknown error'}`, 'error');
-                        restoreOriginalButton(); 
-                    }
-                });
-                cancelBtn.addEventListener('click', () => {
-                    restoreOriginalButton();
-                });
-                actionsDiv.appendChild(confirmBtn);
-                actionsDiv.appendChild(cancelBtn);
-            });
-        }
-    });
-}
+// loadAndDisplayApiKeys and populateApiKeyLinkingDropdown moved to settings-api-keys-ui.ts
 
 // --- Enabled Model Management Logic ---
-function populateApiKeyLinkingDropdown(keys: ApiKeyEntry[]) {
-    if (!enabledModelApiKeyLinkSelect) return;
-    while (enabledModelApiKeyLinkSelect.options.length > 1) {
-        enabledModelApiKeyLinkSelect.remove(1);
-    }
-    if (keys.length === 0) {
-        enabledModelApiKeyLinkSelect.disabled = true;
-        enabledModelApiKeyLinkSelect.options[0].text = "-- No API Keys Available --";
-    } else {
-        enabledModelApiKeyLinkSelect.disabled = false;
-        enabledModelApiKeyLinkSelect.options[0].text = "-- Select API Key to Use --";
-        keys.forEach(key => {
-            const option = document.createElement('option');
-            option.value = key.id; 
-            option.textContent = `${key.label || '(No Label)'} (${key.provider})`; 
-            enabledModelApiKeyLinkSelect.appendChild(option);
-        });
-    }
-}
-
-async function loadAndDisplayEnabledModels() {
-    console.log("Renderer: Requesting enabled models...");
-    if (!enabledModelListDiv) return;
-    try {
-        const models = await window.electronAPI.getEnabledModels();
-        console.log("Renderer: Received enabled models", models.length);
-        displayEnabledModels(models);
-    } catch (error) {
-        console.error("Renderer: Error fetching enabled models:", error);
-        enabledModelListDiv.innerHTML = '<p class="error-message">Error loading enabled models.</p>';
-    }
-}
-
-function displayEnabledModels(models: EnabledModelEntry[]) {
-    if (!enabledModelListDiv) return;
-    enabledModelListDiv.innerHTML = ''; 
-    if (!models || models.length === 0) {
-        enabledModelListDiv.innerHTML = '<p>No models configured yet.</p>'; return;
-    }
-    const keyMap = new Map(cachedApiKeys.map(key => [key.id, key.label || '(No Label)']));
-    models.forEach(model => {
-        const modelEntry = document.createElement('div');
-        modelEntry.className = 'model-entry';
-        modelEntry.setAttribute('data-model-entry-id', model.modelEntryId);
-        const linkedKeyLabel = keyMap.get(model.apiKeyId) || 'Unknown Key';
-        modelEntry.innerHTML = `
-            <div class="model-info">
-                <span class="model-user-label">${model.userLabel}</span>
-                <span class="model-provider-info">(${model.provider})</span>
-                <span class="model-id-info">${model.modelId}</span>
-                <span class="model-key-link">using key: ${linkedKeyLabel}</span>
-            </div>
-            <div class="model-actions">
-                <button class="delete-model-button" title="Delete This Model Configuration">Delete</button>
-            </div>
-        `;
-        enabledModelListDiv.appendChild(modelEntry);
-        const deleteModelButton = modelEntry.querySelector('.delete-model-button') as HTMLButtonElement;
-        if (deleteModelButton) {
-            deleteModelButton.addEventListener('click', () => {
-                const actionsDiv = deleteModelButton.parentElement; 
-                if (!actionsDiv) return;
-                deleteModelButton.style.display = 'none';
-                const confirmBtn = document.createElement('button');
-                confirmBtn.textContent = '✔️';
-                confirmBtn.className = 'confirm-delete-btn';
-                confirmBtn.title = 'Confirm Delete';
-                const cancelBtn = document.createElement('button');
-                cancelBtn.textContent = '❌';
-                cancelBtn.className = 'cancel-delete-btn';
-                cancelBtn.title = 'Cancel Delete';
-                const restoreOriginalButtons = () => {
-                    confirmBtn.remove();
-                    cancelBtn.remove();
-                    deleteModelButton.style.display = '';
-                };
-                confirmBtn.addEventListener('click', async () => {
-                    console.log(`Renderer: Confirming delete for enabled model ID: ${model.modelEntryId}`);
-                    confirmBtn.disabled = true;
-                    cancelBtn.disabled = true;
-                    try {
-                        const success = await window.electronAPI.deleteEnabledModel(model.modelEntryId);
-                        if (success) {
-                            showToast(`Enabled model "${model.userLabel}" deleted.`, 'success');
-                            loadAndDisplayEnabledModels(); 
-                            loadAndPopulateChatModelDropdown(); 
-                        } else {
-                            showToast('Failed to delete enabled model.', 'error');
-                            restoreOriginalButtons();
-                        }
-                    } catch (error) {
-                        console.error('Renderer: Error deleting enabled model:', error);
-                        showToast(`Error deleting enabled model: ${error.message || 'Unknown error'}`, 'error');
-                        restoreOriginalButtons();
-                    }
-                });
-                cancelBtn.addEventListener('click', () => {
-                    restoreOriginalButtons();
-                });
-                actionsDiv.appendChild(confirmBtn);
-                actionsDiv.appendChild(cancelBtn);
-            });
-        }
-    });
-}
+// populateApiKeyLinkingDropdown moved to settings-api-keys-ui.ts
+// loadAndDisplayEnabledModels and displayEnabledModels moved to settings-enabled-models-ui.ts
 
 // --- Settings Modal Logic ---
-function openSettingsModal() {
-    if (settingsModal) {
-        settingsModal.style.display = 'flex';
-        loadAndDisplayApiKeys();
-        loadAndDisplayEnabledModels();
-        loadAndDisplayPersonas(); 
-        console.log("Settings modal opened");
-    }
-}
-
-function closeSettingsModal() { 
-    if (settingsModal) { 
-        settingsModal.style.display = 'none'; 
-        console.log("Settings modal closed"); 
-        if (messageInput) messageInput.focus(); 
-    }
-}
+// Definitions moved to settings-modal-manager.ts
 
 if (openSettingsButton) { openSettingsButton.addEventListener('click', openSettingsModal); }
 if (closeSettingsButton) { closeSettingsButton.addEventListener('click', closeSettingsModal); }
 window.addEventListener('click', (event) => { if (event.target === settingsModal) { closeSettingsModal(); }});
 
-if (addApiKeyButton) {
-    addApiKeyButton.addEventListener('click', async () => {
-        const provider = providerSelect.value; const label = keyLabelInput.value.trim(); const value = keyValueInput.value.trim();
-        if (!provider || !label || !value) { 
-            showToast('Please fill in all API Key fields (Provider, Label, and Value).', 'error'); 
-            return; 
-        }
-        console.log(`Renderer: Requesting save key: ${label}`); addApiKeyButton.disabled = true; addApiKeyButton.textContent = 'Adding...';
-        try {
-            const success = await window.electronAPI.saveApiKey({ provider, label, value });
-            if (success) {
-                console.log(`Renderer: Key "${label}" saved.`);
-                showToast(`API Key "${label}" saved successfully.`, 'success');
-                providerSelect.value = ''; keyLabelInput.value = ''; keyValueInput.value = '';
-                loadAndDisplayApiKeys(); 
-            } else { 
-                showToast('Failed to save API key.', 'error');
-                console.warn('Renderer: Failed to save key (API returned false).'); 
-            }
-        } catch (error) { 
-            console.error('Renderer: Error calling saveApiKey:', error); 
-            showToast(`Error saving API key: ${error.message || 'Unknown error'}`, 'error');
-        }
-        finally { addApiKeyButton.disabled = false; addApiKeyButton.textContent = 'Add Key'; }
-    });
-}
-
-if (addEnabledModelButton) {
-    addEnabledModelButton.addEventListener('click', async () => {
-        const userLabel = enabledModelUserLabelInput.value.trim();
-        const provider = enabledModelProviderSelect.value;
-        const modelId = enabledModelIdInput.value.trim();
-        const apiKeyId = enabledModelApiKeyLinkSelect.value;
-        if (!userLabel || !provider || !modelId || !apiKeyId) {
-            showToast('Please fill in all fields for the enabled model (Name, Provider, Model ID, and linked API Key).', 'error');
-            return;
-        }
-        const modelData = { userLabel, provider, modelId, apiKeyId };
-        console.log(`Renderer: Requesting to add enabled model: ${userLabel}`);
-        addEnabledModelButton.disabled = true; addEnabledModelButton.textContent = 'Adding...';
-        try {
-            console.log('Renderer: Preparing to add model with data:', modelData);
-            const success = await window.electronAPI.addEnabledModel(modelData);
-            if (success) {
-                console.log(`Renderer: Successfully invoked addEnabledModel for ${userLabel}`);
-                 enabledModelUserLabelInput.value = '';
-                 enabledModelProviderSelect.value = '';
-                 enabledModelIdInput.value = '';
-                 enabledModelApiKeyLinkSelect.value = '';
-                 loadAndDisplayEnabledModels();
-                 loadAndPopulateChatModelDropdown(); 
-                 showToast(`Enabled model "${userLabel}" added successfully.`, 'success');
-            } else {
-                 showToast('Failed to add enabled model configuration.', 'error');
-                 console.warn('Renderer: Failed to add enabled model (API returned false).');
-            }
-        } catch (error) {
-            console.error(`Renderer: Error invoking addEnabledModel:`, error);
-             showToast(`Error adding enabled model: ${error.message || 'Unknown error'}`, 'error');
-        } finally {
-             addEnabledModelButton.disabled = false; addEnabledModelButton.textContent = 'Add Enabled Model';
-        }
-    });
-}
+// Add API Key button listener is now set up by setupApiKeysAddListeners()
+// Add Enabled Model button listener is now set up by setupEnabledModelsAddListeners()
 
 // --- Model Selection Logic ---
-async function loadAndPopulateChatModelDropdown() {
+export async function loadAndPopulateChatModelDropdown() {
     console.log('Renderer: Requesting models for chat dropdown...');
     if (!modelSelector) return;
     try {
@@ -687,6 +338,7 @@ async function handleSendMessage() {
     if (!activeSessionId) {
         const newSession = await handleNewChatButtonClick(); 
         if (!newSession || !newSession.id) { 
+            // showToast("Could not create a new chat session. Please try again.", "error"); // Already handled in handleNewChatButtonClick
             sendButton.disabled = false; sendButton.textContent = 'Send';
             return;
         }
@@ -782,10 +434,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadAndPopulateChatModelDropdown();
     await loadAndDisplayChatSessions();
     await populatePersonaSelector();
+    setupApiKeysAddListeners(); // Setup listener for Add API Key button
+    setupEnabledModelsAddListeners(); // Setup listener for Add Enabled Model button
+    setupPersonaManagementListeners(); // Setup listeners for Persona Management
 });
 
 // --- Persona Selector UI Functions ---
-async function populatePersonaSelector() {
+export async function populatePersonaSelector() {
     if (!personaSelector) {
         console.warn("Renderer: Persona selector dropdown not found in chat header.");
         return;
@@ -1203,179 +858,7 @@ if (exportChatButton) {
 }
 
 // --- Persona Management UI Functions (NEW) ---
-async function loadAndDisplayPersonas() {
-    if (!personaListDiv) {
-        console.error("Persona list div element not found.");
-        return;
-    }
-    try {
-        console.log("Renderer: Loading personas...");
-        allPersonas = await window.electronAPI.getPersonas();
-        console.log(`Renderer: Loaded ${allPersonas.length} personas.`);
-        renderPersonaList();
-    } catch (error) {
-        console.error("Renderer: Error loading personas:", error);
-        if (personaListDiv) personaListDiv.innerHTML = '<p class="error-message">Error loading personas.</p>';
-    }
-}
-
-function renderPersonaList() {
-    if (!personaListDiv) return;
-    personaListDiv.innerHTML = ''; 
-    if (allPersonas.length === 0) {
-        personaListDiv.innerHTML = '<p>No personas saved yet. Add one above!</p>';
-        return;
-    }
-    console.log("Renderer: renderPersonaList called. Personas to render:", allPersonas.length);
-    allPersonas.forEach(persona => {
-        const personaEntryDiv = document.createElement('div');
-        personaEntryDiv.className = 'persona-entry'; 
-        personaEntryDiv.setAttribute('data-persona-id', persona.id);
-        const personaInfo = document.createElement('div');
-        personaInfo.className = 'persona-info';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'persona-name-display';
-        nameSpan.textContent = persona.name;
-        personaInfo.appendChild(nameSpan);
-        personaEntryDiv.appendChild(personaInfo);
-        const personaActions = document.createElement('div');
-        personaActions.className = 'persona-actions';
-        const editButton = document.createElement('button');
-        editButton.textContent = 'Edit';
-        editButton.className = 'edit-persona-button'; 
-        editButton.addEventListener('click', () => {
-            if (personaNameInput && personaPromptInput) {
-                personaNameInput.value = persona.name;
-                personaPromptInput.value = persona.prompt;
-                editingPersonaId = persona.id;
-                if (savePersonaButton) savePersonaButton.textContent = 'Update Persona';
-                personaNameInput.focus();
-            }
-        });
-        personaActions.appendChild(editButton);
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.className = 'delete-persona-button'; 
-        deleteButton.addEventListener('click', () => {
-            const actionsDiv = deleteButton.parentElement; 
-            if (!actionsDiv) return;
-            deleteButton.style.display = 'none';
-            const editBtn = actionsDiv.querySelector('.edit-persona-button') as HTMLButtonElement | null;
-            if (editBtn) editBtn.style.display = 'none';
-            const confirmBtn = document.createElement('button');
-            confirmBtn.textContent = '✔️';
-            confirmBtn.className = 'confirm-delete-btn';
-            confirmBtn.title = 'Confirm Delete Persona';
-            const cancelBtn = document.createElement('button');
-            cancelBtn.textContent = '❌';
-            cancelBtn.className = 'cancel-delete-btn';
-            cancelBtn.title = 'Cancel';
-            const restoreOriginalButtons = () => {
-                confirmBtn.remove();
-                cancelBtn.remove();
-                deleteButton.style.display = '';
-                if (editBtn) editBtn.style.display = '';
-            };
-            confirmBtn.addEventListener('click', async () => {
-                console.log(`Renderer: Confirming delete for persona ID: ${persona.id}`);
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                try {
-                    const success = await window.electronAPI.deletePersona(persona.id);
-                    if (success) {
-                        showToast(`Persona "${persona.name}" deleted.`, 'success');
-                        if (editingPersonaId === persona.id) { clearPersonaForm(); }
-                        loadAndDisplayPersonas(); 
-                        populatePersonaSelector(); 
-                    } else {
-                        showToast('Failed to delete persona.', 'error');
-                        restoreOriginalButtons();
-                    }
-                } catch (error) {
-                    console.error(`Renderer: Error deleting persona ${persona.id}:`, error);
-                    showToast(`Error deleting persona: ${error.message || 'Unknown error'}`, 'error');
-                    restoreOriginalButtons();
-                }
-            });
-            cancelBtn.addEventListener('click', () => {
-                restoreOriginalButtons();
-            });
-            actionsDiv.appendChild(confirmBtn);
-            actionsDiv.appendChild(cancelBtn);
-        });
-        personaActions.appendChild(deleteButton);
-        personaEntryDiv.appendChild(personaActions);
-        personaListDiv.appendChild(personaEntryDiv);
-    });
-}
-
-function clearPersonaForm() {
-    if (personaNameInput) personaNameInput.value = '';
-    if (personaPromptInput) personaPromptInput.value = '';
-    editingPersonaId = null;
-    if (savePersonaButton) savePersonaButton.textContent = 'Save Persona';
-    console.log("Renderer: Persona form cleared.");
-}
-
-if (clearPersonaFormButton) {
-    clearPersonaFormButton.addEventListener('click', clearPersonaForm);
-}
-
-async function handleSavePersona() {
-    if (!personaNameInput || !personaPromptInput || !savePersonaButton) {
-        console.error("Persona form elements not found for saving.");
-        return;
-    }
-    const name = personaNameInput.value.trim();
-    const prompt = personaPromptInput.value.trim();
-    if (!name) {
-        showToast("Persona name cannot be empty.", "error");
-        personaNameInput.focus();
-        return;
-    }
-    if (!prompt) {
-        showToast("Persona prompt cannot be empty.", "error");
-        personaPromptInput.focus();
-        return;
-    }
-    const personaData: { id?: string; name: string; prompt: string } = { name, prompt };
-    if (editingPersonaId) {
-        personaData.id = editingPersonaId;
-    }
-    console.log(`Renderer: Saving persona: ${editingPersonaId ? 'Update ID ' + editingPersonaId : 'New'} - ${name}`);
-    savePersonaButton.disabled = true;
-    savePersonaButton.textContent = editingPersonaId ? 'Updating...' : 'Saving...';
-    try {
-        const savedPersona = await window.electronAPI.savePersona(personaData);
-        if (savedPersona) {
-            console.log("Renderer: Persona saved successfully", savedPersona);
-            clearPersonaForm(); 
-            await loadAndDisplayPersonas(); 
-            await populatePersonaSelector(); 
-            showToast(`Persona "${savedPersona.name}" ${personaData.id ? 'updated' : 'saved'} successfully!`, 'success');
-        } else {
-            showToast("Failed to save persona. The persona might not have been found for update, or an unknown error occurred.", "error");
-            console.error("Renderer: Save persona returned null or undefined. Failed to save persona.");
-        }
-    } catch (error) {
-        console.error("Renderer: Error saving persona via IPC:", error);
-        showToast(`Error saving persona: ${error.message || 'Unknown error'}`, 'error');
-    } finally {
-        savePersonaButton.disabled = false;
-        if (editingPersonaId) { 
-             savePersonaButton.textContent = 'Update Persona';
-        } else {
-             savePersonaButton.textContent = 'Save Persona';
-        }
-    }
-}
-
-/*
-async function handleDeletePersona(personaId: string) {
-    // This logic is now part of the inline confirmation in renderPersonaList
-}
-*/
-
-if (savePersonaButton) {
-    savePersonaButton.addEventListener('click', handleSavePersona);
-}
+// All Persona Management UI functions (loadAndDisplayPersonas, renderPersonaList, clearPersonaForm, handleSavePersona)
+// and their button listeners (savePersonaButton, clearPersonaFormButton)
+// have been moved to src/settings-personas-ui.ts
+// setupPersonaManagementListeners() is called in DOMContentLoaded to set them up.
