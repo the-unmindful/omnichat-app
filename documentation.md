@@ -1,7 +1,7 @@
 # OmniChat: Multi-LLM Chat Client - Project Documentation
 
-**Version:** 1.2 (Reflecting features post-Persona implementation and UI enhancements)
-**Date:** 2025-05-10 
+**Version:** 1.4 (Attachment Feature & Stability Fixes)
+**Date:** 2025-05-11
 
 ## 1. Vision
 
@@ -48,6 +48,12 @@ These features represent the current functionality of the application.
     *   [Implemented] Local persistence of all chat sessions and their messages using `electron-store`.
     *   [Implemented] "New Chat" button to create new sessions.
     *   [Implemented] Automatic selection of the most recent chat session on startup.
+*   **File Attachments (Text-Based):**
+    *   [Implemented] Ability to attach files (TXT, HTML, MD) to provide context for the LLM.
+    *   [Implemented] UI includes an attach button, display for the selected file's name and size, and a button to clear the current attachment.
+    *   [Implemented] File content is extracted and prepended to the user's typed message for the *first* message sent with that attachment, forming the context for the LLM. Subsequent messages in the same session (while the attachment remains active) do not re-prepend the file content.
+    *   [Implemented] The chat UI displays only the user's typed message or a placeholder if only an attachment is sent.
+    *   [Implemented] Attachments are automatically cleared when switching to a different chat session or starting a new one.
 *   **Persona Management:**
     *   [Implemented] Settings UI to add, view, edit, and delete Personas (custom system prompts).
     *   [Implemented] Chat header dropdown to select an active Persona for the current chat session.
@@ -128,7 +134,7 @@ This section outlines a plan for the next set of major features to improve chat 
     *   **Chat Organization (Further):** Star/Favorite chats.
     *   **Enhanced Export:** Export chat as PDF.
     *   **UI/UX Refinements:** Theme support (Light/Dark), improved syntax highlighting for code blocks in rendered Markdown, smoother animations.
-    *   **File Attachments in Chat:** Ability to attach various file types (e.g., images, text files, PDFs) to chat messages to provide context or share information during conversations. This would include UI for attaching, viewing, and removing files. (Significant feature, likely V2/V3, requiring careful planning for storage, security, and UI).
+    *   **Advanced File Attachments:** Support for image files (with vision models) and PDFs (with text extraction/RAG). (Basic text file attachment is now implemented).
 
 ## 5. Technical Architecture Overview (Current)
 
@@ -145,6 +151,7 @@ This section outlines a plan for the next set of major features to improve chat 
     *   `src/settings-api-keys-ui.ts`: Manages all UI aspects and logic related to API key configuration (adding, listing, deleting, copying).
     *   `src/settings-enabled-models-ui.ts`: Manages the UI and logic for configuring "Enabled Models" that link specific model IDs to API keys.
     *   `src/settings-personas-ui.ts`: Manages the UI and logic for creating, editing, and deleting user-defined Personas (custom system prompts).
+    *   `src/attachment-handler.ts`: Manages UI interactions and state for file attachments in the chat input area.
 *   **State Management:**
     *   Global application state (e.g., active chat session, cached API keys, list of personas) is primarily managed using exported module-level variables within `src/renderer.ts`.
     *   The new settings UI modules import and interact with this shared state as needed. Future refactoring may introduce a more dedicated state management solution.
