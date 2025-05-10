@@ -60,6 +60,11 @@ These features represent the current functionality of the application.
 *   **Basic Utilities:**
     *   [Implemented] Copy button (📋 icon) on each assistant message to copy the preceding user question and the assistant's response (with model label) to the clipboard in Markdown format.
     *   [Implemented] "Export Chat" button in the chat header to save the entire active chat session as a Markdown (.md) file, including roles, model labels, and active Persona system prompt if used.
+*   **Chat Search & Filtering:**
+    *   [Implemented] Keyword search input in the sidebar to filter chat sessions.
+    *   [Implemented] Searches across chat titles and the full content of messages within each chat.
+    *   [Implemented] Search is performed locally in the main process for privacy and speed.
+    *   [Implemented] Searched chat list persists in the sidebar when a chat is selected from the filtered results. The filter only clears if the search input is manually emptied or a new chat is created.
 
 ## 4. Advanced Features & Roadmap
 
@@ -70,14 +75,14 @@ These features represent the current functionality of the application.
 
 This section outlines a plan for the next set of major features to improve chat management.
 
-*   **1. Chat Filtering:**
+*   **1. Chat Filtering:** [Partially Implemented - Basic keyword search for titles and content is complete]
     *   **Goal:** Allow users to quickly find specific chat sessions based on various criteria.
-    *   **UI Elements (Sidebar, above chat list):**
-        *   A text input field for keyword search (e.g., "Filter chats by title/content...").
-        *   (Optional) Dropdown to select filter scope: Title only, Title + Message Content.
+    *   **Current:** Basic keyword search for titles and message content implemented. Search results persist on chat selection.
+    *   **Future Enhancements (UI Elements - Sidebar, above chat list):**
+        *   (Optional) Dropdown to select filter scope: Title only, Title + Message Content (currently searches both).
         *   (Optional) Dropdown to filter by "Model Used" (based on `modelUsed` in `ChatMessage` or a session-level summary).
         *   (Optional) Dropdown to filter by "Persona Used" (based on `activePersonaId` in `ChatSessionMetadata`).
-    *   **Logic (`renderer.ts`):**
+    *   **Logic (`renderer.ts`, `chat-search-ui.ts`, `index.ts`):**
         *   Event listeners on the search input and filter dropdowns.
         *   A core filtering function that takes the current `allSessionsMetadata` and applies active filters:
             *   Keyword search: Matches against `session.title`. If content search is enabled, this becomes more complex and might require loading messages for visible sessions or an IPC call for backend search.
@@ -123,7 +128,7 @@ This section outlines a plan for the next set of major features to improve chat 
     *   **Chat Organization (Further):** Star/Favorite chats.
     *   **Enhanced Export:** Export chat as PDF.
     *   **UI/UX Refinements:** Theme support (Light/Dark), improved syntax highlighting for code blocks in rendered Markdown, smoother animations.
-    *   **Document Attachment (Significant Feature - V2/V3):** Ability to attach documents for context.
+    *   **File Attachments in Chat:** Ability to attach various file types (e.g., images, text files, PDFs) to chat messages to provide context or share information during conversations. This would include UI for attaching, viewing, and removing files. (Significant feature, likely V2/V3, requiring careful planning for storage, security, and UI).
 
 ## 5. Technical Architecture Overview (Current)
 
