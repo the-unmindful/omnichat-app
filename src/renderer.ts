@@ -1,6 +1,6 @@
 import './styles.css';
 import './components/TestElement'; // Import the TestElement component to register it
-import './components/ChatMessageComponent'; // Import the ChatMessageComponent to register it
+import './components/ChatMessageComponent'; // Corrected import path
 import { marked } from 'marked'; // Import the marked library
 import { showToast } from './toast-notifications';
 import {
@@ -41,6 +41,7 @@ export interface EnabledModelEntry { // Added export
     provider: string;
     modelId: string;
     apiKeyId: string;
+    expectedOutputModalities?: Array<'text' | 'image'>; // NEW for V1.5
 }
 
 // Simplified structure for the chat model dropdown options
@@ -49,9 +50,18 @@ interface AvailableModel {
     displayLabel: string; // The text displayed in the dropdown option
 }
 
+// NEW for V1.5: Interface for structured assistant output
+export interface AssistantOutputContent {
+    type: 'text' | 'image' | 'error' | 'loading'; // Added 'loading'
+    text_content?: string;
+    image_url?: string; // URL to the generated image (or base64 data URI)
+    error_message?: string;
+}
+
 interface ChatMessage {
     role: 'user' | 'assistant' | 'system' | 'error';
-    content: string;
+    content: string; // For user messages, system prompts, and simple text/error fallback
+    assistantOutput?: AssistantOutputContent; // NEW: Structured output for assistant
     modelUsed?: string; // Optional: track which model config was used (modelEntryId or userLabel)
     id?: string;
     personaUsedId?: string | null;    // NEW
@@ -84,7 +94,7 @@ declare global {
             getModelsForChatDropdown: () => Promise<AvailableModel[]>; // Gets simplified list
 
             // Chat Function
-            sendChatMessage: (payload: ChatPayload) => Promise<string>;
+            sendChatMessage: (payload: ChatPayload) => Promise<AssistantOutputContent>; // Updated return type
 
             // NEW Chat Session Management
             createNewChatSession: () => Promise<Partial<ChatSession> | null>;
@@ -233,13 +243,18 @@ async function addMessageToChat(message: ChatMessage) {
     if (!(message.role === 'system' && message.id === 'system-empty-chat-message')) {
         // Iterate through children to find the component by its property
         for (const child of Array.from(chatMessagesDiv.children)) {
-            if (child.tagName === 'CHAT-MESSAGE-COMPONENT' && (child as any).messageId === 'system-empty-chat-message') {
-                child.remove();
-                break; // Found and removed
+            if (child.tagName === 'CHAT-MESSAGE-COMPONENT') {
+                const component = child as any; // Cast to access properties
+                if (component.messageId === 'system-empty-chat-message') {
+                    console.log('Renderer: Removing "empty chat" system message component.');
+                    child.remove();
+                    break; // Found and removed
+                }
             }
         }
     }
 
+    console.log(`Renderer: addMessageToChat called for role: ${message.role}, id: ${message.id || 'N/A'}`);
     const messageComponent = document.createElement('chat-message-component');
     messageComponent.role = message.role;
     messageComponent.messageContent = message.content;
@@ -248,6 +263,32 @@ async function addMessageToChat(message: ChatMessage) {
     if (message.id) {
       messageComponent.messageId = message.id;
     }
+
+    // Pass appropriate content to the component
+    if (message.role === 'assistant' && message.assistantOutput) {
+        messageComponent.outputType = message.assistantOutput.type; 
+        console.log(`Renderer: Setting component outputType to: ${messageComponent.outputType}`);
+
+        if (message.assistantOutput.type === 'text' && message.assistantOutput.text_content) {
+            messageComponent.messageContent = message.assistantOutput.text_content;
+        } else if (message.assistantOutput.type === 'image' && message.assistantOutput.image_url) {
+            messageComponent.imageUrl = message.assistantOutput.image_url;
+            messageComponent.messageContent = message.assistantOutput.text_content || ''; 
+            console.log(`Renderer: Setting component imageUrl to: ${messageComponent.imageUrl}`);
+        } else if (message.assistantOutput.type === 'error' && message.assistantOutput.error_message) {
+            messageComponent.messageContent = message.assistantOutput.error_message;
+        } else if (message.assistantOutput.type === 'loading') {
+            messageComponent.messageContent = '...'; 
+        } else {
+            messageComponent.messageContent = message.content; 
+            messageComponent.outputType = 'text'; 
+        }
+    } else { 
+        messageComponent.messageContent = message.content;
+        messageComponent.outputType = message.role === 'error' ? 'error' : 'text';
+    }
+    console.log(`Renderer: Setting component messageContent to (first 50 chars): "${messageComponent.messageContent.substring(0,50)}"`);
+
     if (message.modelUsed) {
       messageComponent.modelUsed = message.modelUsed;
     }
@@ -328,15 +369,19 @@ async function handleCopyMessagePair(assistantMessageIndex: number, _buttonEleme
 
 
 function removeMessageById(id: string) {
+    console.log(`Renderer: Attempting to remove element with ID: ${id}`);
     const elementToRemove = document.getElementById(id);
-    if (elementToRemove && elementToRemove.tagName === 'CHAT-MESSAGE-COMPONENT') {
-        elementToRemove.remove();
-    } else if (elementToRemove) {
-        // Fallback for safety, though ideally not needed with new approach
-        console.warn(`removeMessageById: Element with ID ${id} was not a CHAT-MESSAGE-COMPONENT. Removing it directly.`);
-        elementToRemove.remove();
+    if (elementToRemove) {
+        console.log(`Renderer: Found element to remove. TagName: ${elementToRemove.tagName}, ID: ${elementToRemove.id}`);
+        if (elementToRemove.tagName === 'CHAT-MESSAGE-COMPONENT') {
+            elementToRemove.remove();
+            console.log(`Renderer: Removed CHAT-MESSAGE-COMPONENT with ID: ${id}`);
+        } else {
+            console.warn(`Renderer: Element with ID ${id} was a ${elementToRemove.tagName}, not CHAT-MESSAGE-COMPONENT. Removing it directly.`);
+            elementToRemove.remove();
+        }
     } else {
-        console.warn(`removeMessageById: Element with ID ${id} not found.`);
+        console.warn(`Renderer: removeMessageById - Element with ID ${id} not found.`);
     }
 }
 
@@ -466,11 +511,12 @@ async function handleSendMessage() {
     }
 
     const thinkingMessageId = `thinking-${Date.now()}`;
-    // Create and add thinking component directly with host ID
     const thinkingComponent = document.createElement('chat-message-component');
-    thinkingComponent.id = thinkingMessageId;
+    thinkingComponent.id = thinkingMessageId; // Host ID for easy removal
     thinkingComponent.role = 'assistant';
-    thinkingComponent.messageContent = '...';
+    // Use the new assistantOutput structure for the thinking message
+    thinkingComponent.messageContent = '...'; // This will trigger the loading indicator in the component
+                                              // No need to set assistantOutput directly for this special case if component handles '...'
     if (chatMessagesDiv) {
         chatMessagesDiv.appendChild(thinkingComponent);
         chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
@@ -526,17 +572,40 @@ async function handleSendMessage() {
     console.log(`Renderer: Sending message. LLM Payload History Length: ${payload.history.length}. Last user content for LLM (first 100 chars): "${contentForLlm.substring(0,100)}..."`);
 
     try {
-        const assistantResponseContent = await window.electronAPI.sendChatMessage(payload);
+        const assistantOutputResponse = await window.electronAPI.sendChatMessage(payload); // Now returns AssistantOutputContent
         removeMessageById(thinkingMessageId);
+        
+        let finalAssistantMessageContent = '';
+        if (assistantOutputResponse.type === 'text') {
+            finalAssistantMessageContent = assistantOutputResponse.text_content || '';
+        } else if (assistantOutputResponse.type === 'image') {
+            // For now, the component handles the image URL.
+            // We can set a placeholder text or caption if available.
+            finalAssistantMessageContent = assistantOutputResponse.text_content || `[Image]`; // Or an empty string
+        } else if (assistantOutputResponse.type === 'error') {
+            finalAssistantMessageContent = assistantOutputResponse.error_message || 'An unknown error occurred.';
+             // Create an error message object to pass to addMessageToChat
+            const errorMessageObj: ChatMessage = {
+                role: 'error',
+                content: finalAssistantMessageContent,
+                assistantOutput: assistantOutputResponse // Pass the full error structure
+            };
+            addMessageToChat(errorMessageObj);
+            // Skip adding to currentConversationMessages or session storage for this specific error display
+            return; // Exit after displaying error
+        }
+
+
         const assistantMessage: ChatMessage = {
             role: 'assistant',
-            content: assistantResponseContent,
+            content: finalAssistantMessageContent, // Main textual content for history/search
+            assistantOutput: assistantOutputResponse, // The full structured output
             modelUsed: modelSelector.options[modelSelector.selectedIndex]?.text || 'Unknown Model Config',
             personaUsedId: currentChatActivePersonaId,
             personaUsedName: currentChatActivePersonaId ? (allPersonas.find(p => p.id === currentChatActivePersonaId)?.name || null) : null
         };
         currentConversationMessages.push(assistantMessage);
-        addMessageToChat(assistantMessage);
+        addMessageToChat(assistantMessage); 
         if (activeSessionId) {
             try {
                 await window.electronAPI.addMessageToChatSession(activeSessionId, assistantMessage);
@@ -553,7 +622,11 @@ async function handleSendMessage() {
     } catch (error) {
         console.error("Renderer: Error receiving chat response:", error);
         removeMessageById(thinkingMessageId);
-        addMessageToChat({ role: 'error', content: `Error: ${error.message || 'Failed to get response.'}` });
+        addMessageToChat({ 
+            role: 'error', 
+            content: `Error: ${error.message || 'Failed to get response.'}`,
+            assistantOutput: { type: 'error', error_message: `Error: ${error.message || 'Failed to get response.'}` }
+        });
     } finally {
         if(sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
         if (messageInput) messageInput.focus();

@@ -1,15 +1,7 @@
-import { LitElement, html, css, unsafeCSS } from 'lit';
+import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { marked } from 'marked';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-
-// Helper function to sanitize HTML (basic example, consider a more robust library for production)
-// For now, we'll rely on marked's default sanitization, but this is a placeholder.
-// const sanitizeHTML = (htmlString: string) => {
-//   const temp = document.createElement('div');
-//   temp.innerHTML = htmlString;
-//   return temp.innerHTML;
-// };
 
 @customElement('chat-message-component')
 export class ChatMessageComponent extends LitElement {
@@ -20,19 +12,32 @@ export class ChatMessageComponent extends LitElement {
   messageContent = '';
 
   @property({ type: String })
+  outputType: 'text' | 'image' | 'error' | 'loading' = 'text';
+
+  @property({ type: String })
+  imageUrl?: string;
+
+  @property({ type: String })
   modelUsed?: string;
 
   @property({ type: String })
   personaUsedName?: string;
 
   @property({ type: String })
-  messageId?: string; // To set the ID on the inner message div
+  messageId?: string; 
 
   @property({ type: Object })
-  onCopy?: (component: ChatMessageComponent) => Promise<void>; // Callback for copy button
+  onCopy?: (component: ChatMessageComponent) => Promise<void>;
 
   @state()
   private _isCopied = false;
+
+  // _isImageLoading and _imageLoadError are bypassed in this diagnostic version's render method for images
+  @state() 
+  private _isImageLoading = false; // Still declare for willUpdate
+  @state()
+  private _imageLoadError = false; // Still declare for willUpdate
+
 
   static styles = css`
     :host {
@@ -97,7 +102,6 @@ export class ChatMessageComponent extends LitElement {
     .message-content {
       word-wrap: break-word;
       overflow-wrap: break-word;
-      /* Markdown styles */
     }
     .message-content pre {
       background-color: var(--code-block-bg, #2d2d2d);
@@ -141,22 +145,38 @@ export class ChatMessageComponent extends LitElement {
     }
     .message-content p {
         margin-top: 0;
-        margin-bottom: 0.5em; /* Add some space between paragraphs */
+        margin-bottom: 0.5em;
     }
     .message-content p:last-child {
         margin-bottom: 0;
     }
-
+    .message-content img { /* General image styling */
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-top: 8px;
+      display: block;
+    }
+    .image-loading-placeholder { /* Still needed for non-diagnostic version */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 150px;
+      width: 100%;
+      background-color: var(--assistant-message-bg, #f0f0f0);
+      border-radius: 10px;
+      color: var(--assistant-message-text, #333);
+    }
 
     .model-label-outside {
       font-size: 0.75em;
       color: var(--model-label-text, #777);
       margin-top: 4px;
-      padding-left: 5px; /* Aligns with bubble start */
+      padding-left: 5px;
     }
     .chat-entry.user .model-label-outside {
       text-align: right;
-      padding-right: 5px; /* Aligns with bubble end */
+      padding-right: 5px;
       padding-left: 0;
     }
 
@@ -185,12 +205,11 @@ export class ChatMessageComponent extends LitElement {
       background: var(--copy-button-hover-bg, rgba(0,0,0,0.2));
     }
 
-    /* Loading Indicator Styles */
     .loading-indicator {
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 20px; /* Adjust as needed */
+      height: 20px;
     }
     .loading-indicator span {
       display: inline-block;
@@ -219,38 +238,81 @@ export class ChatMessageComponent extends LitElement {
 
   private async _handleCopy() {
     if (this.onCopy) {
-      await this.onCopy(this); // Pass the component instance
+      await this.onCopy(this);
       this._isCopied = true;
       setTimeout(() => { this._isCopied = false; }, 1500);
     }
   }
 
-  render() {
-    let contentToRender;
+  // These handlers are not used by the diagnostic image rendering below, but kept for completeness
+  private _handleImageLoad() {
+    this._isImageLoading = false;
+    this._imageLoadError = false;
+  }
 
-    if (this.role === 'assistant' && this.messageContent === '...') {
-      contentToRender = html`<div class="loading-indicator"><span></span><span></span><span></span></div>`;
-    } else if (this.role === 'assistant' || this.role === 'system' || this.role === 'error') {
-      contentToRender = unsafeHTML(marked.parse(this.messageContent || '', { gfm: true, breaks: true }) as string);
-    } else { // user role
+  private _handleImageError() {
+    this._isImageLoading = false;
+    this._imageLoadError = true;
+  }
+
+  // willUpdate is kept as it might be relevant for other property changes
+  willUpdate(changedProperties: Map<string | symbol, unknown>) {
+    if (changedProperties.has('imageUrl') && this.outputType === 'image' && this.imageUrl) {
+      // For the diagnostic version, we are not using _isImageLoading for the main image display path
+      // but we'll set it for consistency if other parts of the component were to rely on it.
+      this._isImageLoading = true; 
+      this._imageLoadError = false;
+    }
+  }
+
+  render() {
+    let contentBlock;
+
+    if (this.outputType === 'loading' || (this.role === 'assistant' && this.messageContent === '...')) {
+      contentBlock = html`<div class="loading-indicator"><span></span><span></span><span></span></div>`;
+    } 
+    else if (this.outputType === 'image' && this.imageUrl) {
+      // Always render the img tag if we have a URL, so its load/error events can fire.
+      // Control visibility of placeholder/image/error based on state.
+      contentBlock = html`
+        <div class="image-container">
+          ${this._isImageLoading ? html`
+            <div class="image-loading-placeholder"><div class="loading-indicator"><span></span><span></span><span></span></div></div>
+          ` : ''}
+          ${this._imageLoadError && !this._isImageLoading ? html`
+            <div class="image-loading-placeholder">Error loading image. URL: ${this.imageUrl}</div>
+          ` : ''}
+          <img 
+            src="${this.imageUrl}" 
+            alt="AI Generated Image" 
+            @load=${() => this._handleImageLoad()} 
+            @error=${() => this._handleImageError()}
+            style="${this._isImageLoading || this._imageLoadError ? 'display: none;' : ''}"
+          >
+        </div>
+      `;
+    } 
+    else if (this.role === 'assistant' || this.role === 'system' || this.role === 'error') {
+      contentBlock = unsafeHTML(marked.parse(this.messageContent || '', { gfm: true, breaks: true }) as string);
+    } else { // user role (always text for now)
       const tempDiv = document.createElement('div');
       tempDiv.textContent = this.messageContent;
-      contentToRender = unsafeHTML(tempDiv.innerHTML.replace(/\n/g, '<br>'));
+      contentBlock = unsafeHTML(tempDiv.innerHTML.replace(/\n/g, '<br>'));
     }
 
     return html`
       <div class="chat-entry ${this.role}">
         <div class="message-bubble ${this.role}" id=${this.messageId || ''}>
           <div class="message-content">
-            ${contentToRender}
+            ${contentBlock}
           </div>
-          ${this.role === 'assistant' && this.messageContent !== '...' && this.onCopy ? html`
+          ${this.role === 'assistant' && this.outputType !== 'loading' && this.outputType !== 'image' && this.messageContent !== '...' && this.onCopy ? html`
             <button class="copy-button" @click=${this._handleCopy} title="Copy Q&A">
               ${this._isCopied ? '✔️' : '📋'}
             </button>
           ` : ''}
         </div>
-        ${this.modelUsed && this.messageContent !== '...' ? html`
+        ${this.modelUsed && this.outputType !== 'loading' && this.messageContent !== '...' ? html`
           <div class="model-label-outside">
             Model: ${this.modelUsed}
             ${this.personaUsedName ? ` (Persona: ${this.personaUsedName})` : ''}
@@ -261,7 +323,6 @@ export class ChatMessageComponent extends LitElement {
   }
 }
 
-// Make sure TypeScript knows about this custom element
 declare global {
   interface HTMLElementTagNameMap {
     'chat-message-component': ChatMessageComponent;

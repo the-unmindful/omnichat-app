@@ -19,6 +19,7 @@ export interface EnabledModelEntry {
     provider: string;
     modelId: string;
     apiKeyId: string;
+    expectedOutputModalities?: Array<'text' | 'image'>; // Added to match renderer.ts
 }
 
 // *** REVISED: For populating the Chat Dropdown (Derived from EnabledModelEntry) ***
@@ -30,11 +31,20 @@ export interface AvailableModel {
 // For Chat Messages (Unchanged)
 export interface ChatMessage {
     role: 'user' | 'assistant' | 'system' | 'error';
-    content: string;
+    content: string; // For user messages, system prompts, and simple text/error fallback
+    assistantOutput?: AssistantOutputContent; // Added to match renderer.ts
     modelUsed?: string;
     id?: string;
     personaUsedId?: string | null;    // NEW
     personaUsedName?: string | null;  // NEW
+}
+
+// NEW for V1.5: Interface for structured assistant output (matches renderer.ts)
+export interface AssistantOutputContent {
+    type: 'text' | 'image' | 'error' | 'loading';
+    text_content?: string;
+    image_url?: string;
+    error_message?: string;
 }
 
 // *** NEW: Interface for a distinct Chat Session (mirrors definition in index.ts) ***
@@ -71,8 +81,8 @@ export interface ElectronAPI {
     // *** REVISED: Get Models for Chat Dropdown ***
     getModelsForChatDropdown: () => Promise<AvailableModel[]>; // Renamed and different return type
 
-    // *** REVISED: Chat Function (Payload changed) ***
-    sendChatMessage: (payload: ChatPayload) => Promise<string>; // This can remain if individual message sending is still needed per session
+    // *** REVISED: Chat Function (Payload changed, return type changed for multi-modal) ***
+    sendChatMessage: (payload: ChatPayload) => Promise<AssistantOutputContent>; 
 
     // --- NEW/REVISED Chat Session Management Signatures ---
     createNewChatSession: () => Promise<Partial<ChatSession> | null>; // Returns metadata of new session
@@ -166,7 +176,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     // --- Chat Function (Mapped to IPC handler) ---
-    sendChatMessage: (payload: ChatPayload): Promise<string> => {
+    sendChatMessage: (payload: ChatPayload): Promise<AssistantOutputContent> => {
         console.log('Preload: Sending send-chat-message request with modelEntryId');
         return ipcRenderer.invoke('send-chat-message', payload);
     },

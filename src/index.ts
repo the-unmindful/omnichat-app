@@ -27,6 +27,7 @@ interface EnabledModelEntry {
     provider: string;     // Provider type (e.g., "OpenRouter", "OpenAI") - determines API format
     modelId: string;      // The exact model ID string the provider expects
     apiKeyId: string;     // The 'id' of the key from the 'apiKeys' array to use
+    expectedOutputModalities?: Array<'text' | 'image'>; // NEW to match renderer/preload
 }
 
 // *** NEW: For populating the chat dropdown (derived from EnabledModelEntry) ***
@@ -38,11 +39,20 @@ interface AvailableModel {
 // For chat messages (consistent across processes)
 interface ChatMessage {
     role: 'user' | 'assistant' | 'system' | 'error';
-    content: string;
+    content: string; // For user messages, system prompts, and simple text/error fallback
+    assistantOutput?: AssistantOutputContent; // NEW to match renderer/preload
     modelUsed?: string;
     id?: string;
     personaUsedId?: string | null;    // NEW: ID of persona active when message was generated
     personaUsedName?: string | null;  // NEW: Name of persona active when message was generated
+}
+
+// NEW for V1.5: Interface for structured assistant output (matches renderer/preload)
+export interface AssistantOutputContent {
+    type: 'text' | 'image' | 'error' | 'loading';
+    text_content?: string;
+    image_url?: string;
+    error_message?: string;
 }
 
 // *** NEW: Interface for a distinct Chat Session ***
@@ -123,6 +133,18 @@ const createWindow = (): void => {
       nodeIntegration: false,
     },
     show: false,
+  });
+
+  // Programmatically set Content Security Policy
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; connect-src 'self' https: http:;"
+        ]
+      }
+    });
   });
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
@@ -280,7 +302,8 @@ ipcMain.handle('get-models-for-chat-dropdown', async (event): Promise<AvailableM
 
 // -- *** REVISED: Send Chat Message Handler *** --
 // Now uses modelEntryId from payload to look up configuration details
-ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise<string> => {
+// Returns AssistantOutputContent
+ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise<AssistantOutputContent> => {
      console.log(`\n--- New Chat Request ---`);
      console.log(`Main: Received request using Enabled Model Entry ID [${payload.modelEntryId}]`);
 
@@ -290,7 +313,8 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
 
      if (!modelEntry) {
          console.error(`Main: Enabled Model Entry NOT FOUND for ID: ${payload.modelEntryId}`);
-         throw new Error(`Configuration for selected model not found. Please check settings.`);
+         // throw new Error(`Configuration for selected model not found. Please check settings.`);
+         return { type: 'error', error_message: `Configuration for selected model not found. Please check settings.` };
      }
      console.log(`Main: Found Enabled Model: Label [${modelEntry.userLabel}], Provider [${modelEntry.provider}], ModelID [${modelEntry.modelId}], KeyID [${modelEntry.apiKeyId}]`);
 
@@ -300,7 +324,8 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
 
     if (!apiKeyData) {
         console.error(`Main: API Key NOT FOUND for ID: ${modelEntry.apiKeyId} (linked to model ${modelEntry.userLabel})`);
-        throw new Error(`API Key linked to the selected model configuration was not found. Please check settings.`);
+        // throw new Error(`API Key linked to the selected model configuration was not found. Please check settings.`);
+        return { type: 'error', error_message: `API Key linked to the selected model configuration was not found. Please check settings.` };
     }
     console.log(`Main: Found Linked Key Label: [${apiKeyData.label}]`);
 
@@ -311,11 +336,22 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
     const modelId = modelEntry.modelId;   // Use modelId from the model entry
     const history = payload.history;
 
+    // Simulate image request for V1.5 testing
+    const lastUserMessage = history.length > 0 ? history[history.length - 1] : null;
+    if (lastUserMessage && lastUserMessage.role === 'user' && 
+        (lastUserMessage.content.toLowerCase().includes('image') || lastUserMessage.content.toLowerCase().includes('draw'))) {
+        console.log("Main: Image request detected (simulation). Returning Picsum URL.");
+        return {
+            type: 'image',
+            image_url: `https://picsum.photos/500/300?random=${Date.now()}`,
+            text_content: `Here is the image you requested: ${lastUserMessage.content}` // Optional caption
+        };
+    }
+
     console.log(`Main: Preparing API call | Provider: ${provider} | Model ID: ${modelId} | API Key Starts With: ${apiKey.substring(0, 4)}...`);
     // Log the actual content being sent for the last user message (which includes attachment text)
-    if (history.length > 0) {
-        const lastMessageContent = history[history.length -1].content;
-        console.log(`Main: Content for LLM (last user message): \n---\n${lastMessageContent}\n---`);
+    if (lastUserMessage) { // Check if lastUserMessage is not null
+        console.log(`Main: Content for LLM (last user message): \n---\n${lastUserMessage.content}\n---`);
     }
 
 
@@ -437,11 +473,23 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
         // ... (rest of the try block - success logging) ...
         console.log(`Main: Received response from ${provider}. Length: ${responseContent.length}`);
         console.log(`--- Chat Request End ---`);
-        return responseContent; // Return the successfully extracted content
+        return { type: 'text', text_content: responseContent };
 
     } catch (error) {
         // ... (rest of the catch block - error logging and rethrowing) ...
-         console.error(`Main: Error during API call to ${provider} (${modelId}):`, error.response?.data || error.message || error); let apiErrorMessage = 'API call failed.'; if (axios.isAxiosError(error)) { const errorData = error.response?.data; if (errorData?.error?.message) apiErrorMessage = `API Error: ${errorData.error.message}`; else if (errorData?.type === 'error' && errorData?.error?.message) apiErrorMessage = `API Error: ${errorData.error.message}`; else if (error.message) apiErrorMessage = error.message; } else if (error instanceof Error) { apiErrorMessage = error.message; } console.log(`--- Chat Request End (Error) ---`); throw new Error(apiErrorMessage);
+         console.error(`Main: Error during API call to ${provider} (${modelId}):`, error.response?.data || error.message || error); 
+         let apiErrorMessage = 'API call failed.'; 
+         if (axios.isAxiosError(error)) { 
+             const errorData = error.response?.data; 
+             if (errorData?.error?.message) apiErrorMessage = `API Error: ${errorData.error.message}`; 
+             else if (errorData?.type === 'error' && errorData?.error?.message) apiErrorMessage = `API Error: ${errorData.error.message}`; 
+             else if (error.message) apiErrorMessage = error.message; 
+         } else if (error instanceof Error) { 
+             apiErrorMessage = error.message; 
+         } 
+         console.log(`--- Chat Request End (Error) ---`); 
+         // throw new Error(apiErrorMessage);
+         return { type: 'error', error_message: apiErrorMessage };
     }
 });
 // ***** END OF REVISED HANDLER *****

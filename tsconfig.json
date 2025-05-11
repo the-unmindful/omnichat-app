@@ -33,6 +33,7 @@
     // "forge.config.ts"
   ],
    "exclude": [
-    "node_modules" // Standard exclusion
+    "node_modules", // Standard exclusion
+    "ChatMessageComponent_original.ts" // Exclude the renamed original file if it's in the root
   ]
 }
