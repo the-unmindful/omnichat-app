@@ -1,7 +1,7 @@
 # OmniChat: Multi-LLM Chat Client - Project Documentation
 
-**Version:** 1.4 (Attachment Feature & Stability Fixes)
-**Date:** 2025-05-11
+**Version:** 1.5 (Basic Image Output Simulation & V1.6 Prep)
+**Date:** 2025-05-11 (Updated for V1.5 completion)
 
 ## 1. Vision
 
@@ -71,13 +71,31 @@ These features represent the current functionality of the application.
     *   [Implemented] Searches across chat titles and the full content of messages within each chat.
     *   [Implemented] Search is performed locally in the main process for privacy and speed.
     *   [Implemented] Searched chat list persists in the sidebar when a chat is selected from the filtered results. The filter only clears if the search input is manually emptied or a new chat is created.
+*   **Image Output Simulation (V1.5):**
+    *   [Implemented] Architectural adjustments for multi-modal output (structured `AssistantOutputContent` interface).
+    *   [Implemented] IPC channels (`sendChatMessage`) updated to handle structured output.
+    *   [Implemented] `ChatMessageComponent.ts` extended to display images from URLs, including loading and error states.
+    *   [Implemented] Main process (`src/index.ts`) simulates image responses (using Picsum Photos) if a prompt includes "draw" or "image".
+    *   [Implemented] Renderer process (`src/renderer.ts`) correctly processes image responses and passes data to the component.
+    *   [Implemented] Content Security Policy (CSP) updated programmatically in `src/index.ts` to allow image loading from external sources.
+    *   [Implemented] Copy button on assistant messages is now hidden for image outputs.
 
 ## 4. Advanced Features & Roadmap
 
-*   **Currently Under Development / Next Up:**
-    *   **Model Parameter Configuration:** UI to view and tweak common model parameters (e.g., temperature, top_p) associated with personas or globally.
+*   **Currently Under Development / Next Up (V1.6 Focus):**
+    *   **Thorough Testing of Model Configuration & API Key Integration:**
+        *   Verify end-to-end functionality of adding API keys for various providers (OpenAI, OpenRouter, Gemini, Anthropic).
+        *   Test configuration of "Enabled Models," linking them to specific API keys and ensuring correct model IDs are used.
+        *   Confirm the in-chat `model-selector` populates correctly and allows selection of these user-defined configurations.
+    *   **Testing Live LLM Calls:**
+        *   With valid API keys and model configurations, test actual text generation calls to OpenAI, OpenRouter, Gemini, and Anthropic via the chat interface.
+        *   Ensure conversation history is correctly formatted and sent to each provider.
+        *   Verify responses are received and displayed.
+    *   **Refine Error Handling for LLM Calls:**
+        *   Improve user feedback for API errors (e.g., invalid key, quota exceeded, model not available).
+    *   **(Lower Priority for V1.6, but related to V1.5):** Consider if the Picsum image simulation needs to provide persistent images for the same prompt (e.g., using seeded URLs) or if the current random image per request is sufficient for simulation.
 
-### Next Implementation Focus: Enhanced Chat Organization & Filtering
+### Future Implementation Focus (Post V1.6): Enhanced Chat Organization & Model Parameter Configuration
 
 This section outlines a plan for the next set of major features to improve chat management.
 
