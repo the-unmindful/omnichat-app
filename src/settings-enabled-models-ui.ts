@@ -28,16 +28,21 @@ function displayEnabledModelsInSettings(models: EnabledModelEntry[]) {
         modelEntry.className = 'model-entry';
         modelEntry.setAttribute('data-model-entry-id', model.modelEntryId);
         const linkedKeyLabel = keyMap.get(model.apiKeyId) || 'Unknown Key';
-        const modalitiesString = model.expectedOutputModalities && model.expectedOutputModalities.length > 0 
-            ? model.expectedOutputModalities.join(', ') 
-            : 'text (default)';
+        
+        const modalitiesDisplay = model.expectedOutputModalities && model.expectedOutputModalities.length > 0
+            ? model.expectedOutputModalities.map(m => `<span class="modality-tag ${m.toLowerCase()}-modality">${m.charAt(0).toUpperCase() + m.slice(1)}</span>`).join(' ')
+            : '<span class="modality-tag default-modality">Text (default)</span>';
+
         modelEntry.innerHTML = `
             <div class="model-info">
                 <span class="model-user-label">${model.userLabel}</span>
                 <span class="model-provider-info">(${model.provider})</span>
                 <span class="model-id-info">${model.modelId}</span>
                 <span class="model-key-link">using key: ${linkedKeyLabel}</span>
-                <span class="model-modalities" style="font-size: 0.8em; color: #555;">Modalities: ${modalitiesString}</span>
+                <div class="model-modalities-container">
+                    <span class="model-modalities-label">Modalities:</span>
+                    ${modalitiesDisplay}
+                </div>
             </div>
             <div class="model-actions">
                 <button class="delete-model-button" title="Delete This Model Configuration">Delete</button>

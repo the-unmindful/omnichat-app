@@ -124,6 +124,26 @@ body {
     /* overflow: auto; */
 }
 
+#chat-search-input { /* Moved from inline styles and enhanced */
+    width: 100%; /* Take full width of padded sidebar */
+    margin-bottom: var(--spacing-md); /* Consistent margin */
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-content); /* Make it look like an input on the sidebar paper */
+    color: var(--text-primary);
+    font-size: 0.9em;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.07);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#chat-search-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.07), 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+
 /* Styling for buttons directly in the sidebar, like "New Chat" */
 .sidebar-button {
     display: block;
@@ -328,6 +348,7 @@ body {
     max-width: 85%;
     line-height: 1.5;
     box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color-soft); /* Added subtle border for paper feel */
     word-wrap: break-word;
     /* Ensure message itself doesn't cause overflow if max-width is hit */
     overflow-wrap: break-word;
@@ -491,13 +512,15 @@ body {
     flex-grow: 1;
     resize: none;
     padding: var(--spacing-md);
-    border: 1px solid var(--border-color-medium);
+    /* border: 1px solid var(--border-color-medium); */ /* Original border */
+    border: 1px solid #ddd; /* Softer border for paper feel */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08); /* Subtle inset shadow */
     border-radius: var(--border-radius-lg);
     margin-right: var(--spacing-md);
     font-family: var(--font-family-sans);
     font-size: var(--font-size-base);
     line-height: 1.4;
-    min-height: 44px;
+    min-height: 44px; /* Keep consistent height with buttons */
     max-height: 150px;
     overflow-y: auto;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -505,59 +528,89 @@ body {
 
 .chat-input-area textarea:focus {
     outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+    border-color: var(--accent-primary); /* Keep accent focus */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08), 0 0 0 2px rgba(0, 122, 255, 0.2); /* Combine inset with focus ring */
 }
+
+/* General style for buttons in chat-input-area */
+.chat-input-area button {
+    height: 44px; /* Consistent height */
+    flex-shrink: 0;
+    cursor: pointer;
+    border-radius: var(--border-radius-lg); /* Consistent radius */
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    border: 1px solid var(--border-color-medium); /* Default border */
+    background-color: #f8f9fa; /* Lighter, paper-like background */
+    color: var(--text-primary); /* Darker text for contrast */
+}
+.chat-input-area button:hover:not(:disabled) {
+    background-color: #e9ecef;
+    border-color: #bbb; /* Slightly darker border on hover */
+    box-shadow: var(--shadow-sm);
+}
+.chat-input-area button:active:not(:disabled) {
+    background-color: #dae0e5;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+.chat-input-area button:disabled {
+    background-color: #e9ecef; /* Lighter disabled background */
+    color: #adb5bd; /* Lighter text for disabled */
+    border-color: #dee2e6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 
 .chat-input-area button#send-button {
     padding: 0 var(--spacing-lg);
-    height: 44px;
-    flex-shrink: 0;
-    cursor: pointer;
+    /* Specific overrides for send button if needed, e.g., primary action color */
     background-color: var(--accent-primary);
     color: var(--text-on-accent);
-    border: none;
-    border-radius: var(--border-radius-lg);
-    font-weight: 500;
-    transition: background-color 0.2s ease;
+    border-color: var(--accent-primary); /* Match background */
 }
 
 .chat-input-area button#send-button:hover:not(:disabled) {
     background-color: var(--accent-primary-hover);
+    border-color: var(--accent-primary-hover);
+    box-shadow: var(--shadow-sm);
 }
 .chat-input-area button#send-button:disabled {
-    background-color: #a0cfff;
-    cursor: not-allowed;
+    background-color: #a0cfff; /* Keep specific disabled color for primary button */
+    color: var(--text-on-accent);
+    opacity: 0.7;
+    border-color: #a0cfff;
 }
+
 
 /* Attachment Controls Styling */
 .attachment-controls {
-    margin-right: var(--spacing-sm); /* Space between attach button and textarea */
+    margin-right: var(--spacing-sm); 
     display: flex;
-    align-items: center; /* Align button vertically if needed */
+    align-items: center; 
 }
 
 #attach-file-button {
-    background: none;
-    border: 1px solid var(--border-color-medium);
-    color: var(--text-secondary);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius-lg); /* Match send button/textarea */
-    cursor: pointer;
-    font-size: 1.2em; /* Make icon a bit larger */
+    /* background: none; */ /* Reverted to general button style */
+    /* border: 1px solid var(--border-color-medium); */ /* Handled by general .chat-input-area button */
+    /* color: var(--text-secondary); */ /* Handled by general .chat-input-area button */
+    padding: var(--spacing-sm); /* Keep specific padding for icon */
+    /* border-radius: var(--border-radius-lg); */ /* Handled by general */
+    font-size: 1.2em; 
     line-height: 1;
-    height: 44px; /* Match send button height */
+    /* height: 44px; */ /* Handled by general */
     width: 44px; /* Make it square */
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    /* transition: background-color 0.2s ease, border-color 0.2s ease; */ /* Handled by general */
 }
 
-#attach-file-button:hover {
+/* Hover for attach button can use the general button hover or be specific if needed */
+/* #attach-file-button:hover {
     background-color: var(--bg-hover-subtle);
     border-color: var(--accent-primary);
-}
+} */
 
 .selected-attachment-display {
     font-size: var(--font-size-sm);
@@ -737,6 +790,47 @@ body {
      background-color: #45a049;
 }
 
+/* Styling for the modality selection in the enabled models form */
+.enabled-model-form .form-group { 
+    margin-bottom: var(--spacing-md); 
+}
+
+.enabled-model-form .form-group > label { /* The main label "Expected Output Modalities:" */
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500; 
+    color: var(--text-secondary); 
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: var(--spacing-lg); /* Increased gap between "Text" and "Image" pairs */
+    align-items: center;
+}
+
+/* Styling for each checkbox and its direct label */
+.checkbox-group div { /* This targets the <div>s wrapping each checkbox+label */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs); /* Small gap between checkbox and its label */
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0; /* Remove default margins if any */
+    width: 16px; 
+    height: 16px; 
+    cursor: pointer;
+}
+
+.checkbox-group label { /* Labels next to checkboxes (e.g., "Text", "Image") */
+    font-weight: normal; 
+    color: var(--text-primary); 
+    cursor: pointer;
+    user-select: none; /* Prevent text selection on label click */
+}
+
+
 .persona-form textarea { /* Specific styling for persona prompt textarea */
     display: block;
     width: 100%;
@@ -828,6 +922,47 @@ body {
 .model-info .model-provider-info { font-style: italic; color: var(--text-secondary); font-size: 0.9em; }
 .model-info .model-id-info { font-family: var(--font-family-mono); color: var(--text-secondary); background-color: var(--bg-sidebar); padding: 2px 5px; border-radius: var(--border-radius-sm); font-size: 0.9em; }
 .model-info .model-key-link { color: var(--text-accent); font-size: 0.9em; }
+
+.model-modalities-container {
+    font-size: 0.8em; /* Smaller base size for this line */
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs); /* Space above the modalities line */
+    display: flex; 
+    align-items: center;
+    gap: var(--spacing-xs); /* Gap between "Modalities:" label and first tag */
+}
+
+.model-modalities-label {
+    margin-right: var(--spacing-xs); /* Consistent with gap if preferred */
+}
+
+.modality-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95em; /* Slightly smaller than the main model info text */
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.modality-tag.text-modality {
+    background-color: #cfe2ff; /* Light blue */
+    color: #004085; /* Darker blue text */
+    border: 1px solid #b8daff;
+}
+
+.modality-tag.image-modality {
+    background-color: #d4edda; /* Light green */
+    color: #155724; /* Darker green text */
+    border: 1px solid #c3e6cb;
+}
+
+.modality-tag.default-modality {
+    background-color: #f8f9fa; /* Light grey */
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color-soft);
+}
 
 
 .key-actions, .model-actions, .persona-actions {
