@@ -346,6 +346,102 @@ body {
     /* line-height: 1.1; */ /* Adjust line height if necessary */
 }
 
+/* Model Parameters Button in Chat Header */
+#model-params-button {
+    margin-left: auto; /* Push it to the right of other elements if gap isn't enough */
+    padding: var(--spacing-xs) var(--spacing-sm); /* Adjust for icon button */
+    font-size: 1.1em; /* Icon size */
+    line-height: 1;
+}
+
+/* Model Parameters Popover */
+.popover {
+    position: absolute;
+    top: 60px; /* Adjust based on header height + desired offset */
+    right: var(--spacing-xl); /* Align with the right side of the header */
+    background-color: var(--bg-content);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-md);
+    z-index: 1050; /* Ensure it's above chat messages, but potentially below modals */
+    width: 280px; /* Or max-width */
+    display: none; /* Initially hidden, toggled by JS */
+}
+
+.popover h4 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    font-size: 1.05em;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-soft);
+    padding-bottom: var(--spacing-sm);
+}
+
+.popover .param-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.popover .param-group label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-right: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.popover .param-group input[type="number"] {
+    width: 80px; /* Adjust width as needed */
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color-medium);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9em;
+    text-align: right;
+    background-color: var(--bg-app); /* Slightly different bg for input */
+}
+.popover .param-group input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+
+.popover .popover-actions {
+    margin-top: var(--spacing-lg);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+.popover .popover-actions button {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.9em;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.popover .popover-actions button#apply-model-params-button {
+    background-color: var(--accent-primary);
+    color: var(--text-on-accent);
+    border: 1px solid var(--accent-primary);
+}
+.popover .popover-actions button#apply-model-params-button:hover {
+    background-color: var(--accent-primary-hover);
+}
+
+.popover .popover-actions button#close-model-params-button {
+    background-color: var(--bg-sidebar);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color-medium);
+}
+.popover .popover-actions button#close-model-params-button:hover {
+    background-color: var(--bg-hover-subtle);
+}
+
 
 /* 7. Chat Messages Area */
 .chat-messages {

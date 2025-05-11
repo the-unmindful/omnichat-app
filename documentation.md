@@ -1,7 +1,7 @@
 # OmniChat: Multi-LLM Chat Client - Project Documentation
 
-**Version:** 1.5 (Basic Image Output Simulation & V1.6 Prep)
-**Date:** 2025-05-11 (Updated for V1.5 completion)
+**Version:** 1.6 (Model Parameter Configuration & V1.5 Image Simulation)
+**Date:** 2025-05-12 (Updated for Model Parameter integration)
 
 ## 1. Vision
 
@@ -79,6 +79,13 @@ These features represent the current functionality of the application.
     *   [Implemented] Renderer process (`src/renderer.ts`) correctly processes image responses and passes data to the component.
     *   [Implemented] Content Security Policy (CSP) updated programmatically in `src/index.ts` to allow image loading from external sources.
     *   [Implemented] Copy button on assistant messages is now hidden for image outputs.
+*   **Model Parameter Configuration (V1.6):**
+    *   [Implemented] UI popover in the chat header (near model selector) to configure Temperature, Top P, and Max Tokens.
+    *   [Implemented] Global persistence of these parameters in `currentModelParams` within `src/renderer.ts`.
+    *   [Implemented] Parameters are updated live as the user types in the popover input fields.
+    *   [Implemented] Input fields are populated with current global values when the popover is opened and when the selected model changes.
+    *   [Implemented] Parameters are included in the `ChatPayload` sent to the main process.
+    *   [Implemented] Main process (`src/index.ts`) correctly receives and applies these parameters (with provider-specific naming and defaults) to API calls for OpenAI, OpenRouter, Anthropic, and Gemini.
 
 ## 4. Advanced Features & Roadmap
 
@@ -94,8 +101,9 @@ These features represent the current functionality of the application.
     *   **Refine Error Handling for LLM Calls:**
         *   Improve user feedback for API errors (e.g., invalid key, quota exceeded, model not available).
     *   **(Lower Priority for V1.6, but related to V1.5):** Consider if the Picsum image simulation needs to provide persistent images for the same prompt (e.g., using seeded URLs) or if the current random image per request is sufficient for simulation.
+    *   **(Completed in V1.6):** Model Parameter Configuration (Temperature, Top P, Max Tokens).
 
-### Future Implementation Focus (Post V1.6): Enhanced Chat Organization & Model Parameter Configuration
+### Future Implementation Focus (Post V1.6): Enhanced Chat Organization
 
 This section outlines a plan for the next set of major features to improve chat management.
 
@@ -178,6 +186,7 @@ This section outlines a plan for the next set of major features to improve chat 
     *   API Keys (values are base64 encoded, not fully encrypted).
     *   Enabled Model configurations.
     *   Chat Sessions (including all messages and metadata).
+    *   Global model parameters (`currentModelParams` in renderer, these influence API calls but are not directly stored in `electron-store` themselves; they are part of the renderer's runtime state).
 *   **Build System:** Electron Forge with the Webpack plugin.
 
 ## 6. Design Philosophy

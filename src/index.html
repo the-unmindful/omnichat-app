@@ -37,6 +37,28 @@
                     <!-- Saved personas will populate this dropdown -->
                 </select>
                 <button id="export-chat-button">Export Chat</button>
+                <button id="model-params-button" title="Model Parameters">⚙️</button>
+            </div>
+
+            <!-- Model Parameters Popover (Initially Hidden) -->
+            <div id="model-params-popover" class="popover" style="display:none;">
+                <h4>Model Parameters</h4>
+                <div class="param-group">
+                    <label for="param-temperature">Temperature:</label>
+                    <input type="number" id="param-temperature" name="temperature" step="0.1" min="0" max="2.0" value="0.7">
+                </div>
+                <div class="param-group">
+                    <label for="param-top-p">Top P:</label>
+                    <input type="number" id="param-top-p" name="topP" step="0.01" min="0" max="1.0" value="1.0">
+                </div>
+                <div class="param-group">
+                    <label for="param-max-tokens">Max Output Tokens:</label>
+                    <input type="number" id="param-max-tokens" name="maxTokens" step="64" min="64" value="2048">
+                </div>
+                <div class="popover-actions">
+                    <button id="apply-model-params-button">Apply</button>
+                    <button id="close-model-params-button" type="button">Close</button>
+                </div>
             </div>
 
             <!-- Chat Messages Area -->

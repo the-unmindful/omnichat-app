@@ -11,11 +11,13 @@ import {
     addApiKeyButton, apiKeyListDiv, providerSelect, keyLabelInput, keyValueInput,
     addEnabledModelButton, enabledModelListDiv, enabledModelUserLabelInput, enabledModelProviderSelect, enabledModelIdInput, enabledModelApiKeyLinkSelect,
     personaNameInput, personaPromptInput, savePersonaButton, clearPersonaFormButton, personaListDiv,
-    attachFileButton, selectedAttachmentDisplay // NEW Attachment UI Elements
-    // messageInput is also used by attachment-handler, but already imported
+    attachFileButton, selectedAttachmentDisplay, // NEW Attachment UI Elements
+    // For Model Parameters Popover (assuming IDs will be added to ui-elements.ts or queried directly)
+    // modelParamsButton, modelParamsPopover, applyModelParamsButton, closeModelParamsButton,
+    // paramTemperatureInput, paramTopPInput, paramMaxTokensInput 
 } from './ui-elements';
 import { openSettingsModal, closeSettingsModal } from './settings-modal-manager';
-import { renderApiKeysList, setupAddApiKeyButtonListeners as setupApiKeysAddListeners } from './settings-api-keys-ui'; // Aliased for clarity
+import { renderApiKeysList, setupAddApiKeyButtonListeners as setupApiKeysAddListeners, loadAndDisplayApiKeys } from './settings-api-keys-ui'; // Aliased for clarity & import loadAndDisplayApiKeys
 import { setupAddEnabledModelButtonListeners as setupEnabledModelsAddListeners } from './settings-enabled-models-ui'; // loadAndDisplayEnabledModelsFromUi removed
 import { setupPersonaManagementListeners } from './settings-personas-ui'; // Import new setup function
 import { setupChatSearch } from './chat-search-ui'; // Import chat search setup
@@ -87,6 +89,9 @@ interface ChatMessage {
 interface ChatPayload {
     modelEntryId: string; // The ID of the configuration to use
     history: ChatMessage[];
+    temperature?: number; // ADD THIS
+    topP?: number;        // ADD THIS
+    maxTokens?: number;   // ADD THIS
 }
 
 
@@ -166,6 +171,12 @@ console.log('👋 Renderer script loaded (Refactored with UI elements and Toast 
 let currentSelectedModelEntryId: string | null = null; // Store the ID of the selected enabled model config
 export let cachedApiKeys: ApiKeyEntry[] = []; // Cache keys for populating dropdowns
 let cachedEnabledModels: EnabledModelEntry[] = []; // NEW: Cache for full enabled model entries
+// NEW: State for Model Parameters
+let currentModelParams = {
+    temperature: 0.7,
+    topP: 1.0,
+    maxTokens: 65550, 
+};
 
 // NEW State Variables for Multi-Session Management
 let allSessionsMetadata: PreloadChatSessionMetadata[] = []; // Use imported type
@@ -293,6 +304,15 @@ function handleModelSelectionChange() {
         console.log('Renderer: No model selected or model not found in cache.');
     }
     updateChatHeaderModalityTags(selectedModel || null);
+
+    // Update popover inputs to reflect current global params when model changes
+    const paramTempInput = document.getElementById('param-temperature') as HTMLInputElement | null;
+    const paramTopPInput = document.getElementById('param-top-p') as HTMLInputElement | null;
+    const paramMaxTokensInput = document.getElementById('param-max-tokens') as HTMLInputElement | null;
+
+    if(paramTempInput) paramTempInput.value = currentModelParams.temperature.toFixed(1);
+    if(paramTopPInput) paramTopPInput.value = currentModelParams.topP.toFixed(2);
+    if(paramMaxTokensInput) paramMaxTokensInput.value = currentModelParams.maxTokens.toString();
 }
 
 if (modelSelector) {
@@ -733,9 +753,15 @@ async function handleSendMessage() {
     }
 
     const payload: ChatPayload = {
-        modelEntryId: currentSelectedModelEntryId,
+        modelEntryId: currentSelectedModelEntryId!,
         history: historyForPayload,
+        temperature: currentModelParams.temperature, 
+        topP: currentModelParams.topP,                
+        maxTokens: currentModelParams.maxTokens,      
     };
+
+    // Log the entire payload being sent to main
+    console.log('Renderer: Payload being sent to main:', JSON.stringify(payload, null, 2));
 
     console.log(`Renderer: Sending message. LLM Payload History Length: ${payload.history.length}. Last user content for LLM (type: ${typeof contentForLlm === 'string' ? 'string' : 'array'}, first 100 chars if string): "${typeof contentForLlm === 'string' ? contentForLlm.substring(0,100) : '[Multipart Content]' }..."`);
     if (Array.isArray(contentForLlm)) {
@@ -832,7 +858,87 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (chatSearchInput) { // Setup chat search
         setupChatSearch(chatSearchInput, handleSearchResults);
     }
+    setupModelParamsPopoverListeners(); // NEW: Setup listeners for the model params popover
 });
+
+// --- Model Parameters Popover Logic ---
+function setupModelParamsPopoverListeners() {
+    const modelParamsButton = document.getElementById('model-params-button') as HTMLButtonElement | null;
+    const modelParamsPopover = document.getElementById('model-params-popover') as HTMLDivElement | null;
+    const closeModelParamsButton = document.getElementById('close-model-params-button') as HTMLButtonElement | null;
+    const paramTemperatureInput = document.getElementById('param-temperature') as HTMLInputElement | null;
+    const paramTopPInput = document.getElementById('param-top-p') as HTMLInputElement | null;
+    const paramMaxTokensInput = document.getElementById('param-max-tokens') as HTMLInputElement | null;
+
+    if (!modelParamsButton || !modelParamsPopover || !closeModelParamsButton || !paramTemperatureInput || !paramTopPInput || !paramMaxTokensInput) {
+        console.warn("Renderer: Model parameters UI elements not all found. Popover functionality may be limited.");
+        return;
+    }
+
+    const updateParam = (param: keyof typeof currentModelParams, value: string | number, min: number, max: number, isFloat: boolean = false) => {
+        let numValue = Number(value);
+        if (isNaN(numValue)) { 
+            // If input is not a number, revert to current stored value or a default if still NaN
+            numValue = currentModelParams[param]; 
+            if (isNaN(numValue)) { // Fallback if currentModelParams[param] was also somehow NaN
+                if (param === 'temperature') numValue = 0.7;
+                else if (param === 'topP') numValue = 1.0;
+                else if (param === 'maxTokens') numValue = 2048;
+                else numValue = min; // General fallback
+            }
+        }
+        if (numValue < min) numValue = min;
+        if (numValue > max) numValue = max;
+    
+        if (isFloat) {
+            currentModelParams[param] = parseFloat(numValue.toFixed(param === 'temperature' ? 1 : 2)); 
+        } else {
+            currentModelParams[param] = Math.round(numValue); 
+        }
+    
+        // Update the input field to reflect the validated and formatted value
+        if (param === 'temperature' && paramTemperatureInput) paramTemperatureInput.value = currentModelParams.temperature.toFixed(1);
+        if (param === 'topP' && paramTopPInput) paramTopPInput.value = currentModelParams.topP.toFixed(2);
+        if (param === 'maxTokens' && paramMaxTokensInput) paramMaxTokensInput.value = currentModelParams.maxTokens.toString();
+    
+        console.log("Renderer: Model params updated:", currentModelParams);
+    };
+
+    paramTemperatureInput.addEventListener('input', () => updateParam('temperature', paramTemperatureInput.value, 0.0, 2.0, true));
+    paramTopPInput.addEventListener('input', () => updateParam('topP', paramTopPInput.value, 0.0, 1.0, true));
+    paramMaxTokensInput.addEventListener('input', () => updateParam('maxTokens', paramMaxTokensInput.value, 1, 65500, false)); // Min 1 for maxTokens
+
+    modelParamsButton.addEventListener('click', (event) => {
+        event.stopPropagation(); 
+        if (!modelParamsPopover || !paramTemperatureInput || !paramTopPInput || !paramMaxTokensInput) return;
+        const isVisible = modelParamsPopover.style.display === 'block';
+        modelParamsPopover.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
+            // Populate inputs with current global values when popover is opened
+            paramTemperatureInput.value = currentModelParams.temperature.toFixed(1);
+            paramTopPInput.value = currentModelParams.topP.toFixed(2);
+            paramMaxTokensInput.value = currentModelParams.maxTokens.toString();
+            console.log("Renderer: Model params popover opened and populated.");
+        }
+    });
+
+    if (closeModelParamsButton && modelParamsPopover) {
+        closeModelParamsButton.addEventListener('click', () => {
+            modelParamsPopover.style.display = 'none';
+        });
+    }
+
+    if (modelParamsPopover && modelParamsButton) {
+        window.addEventListener('click', (event) => {
+            if (modelParamsPopover.style.display === 'block') {
+                if (!modelParamsPopover.contains(event.target as Node) && event.target !== modelParamsButton) {
+                    modelParamsPopover.style.display = 'none';
+                }
+            }
+        });
+    }
+}
+
 
 // --- Search Results Handler ---
 function handleSearchResults(results: PreloadChatSessionMetadata[] | null) {
@@ -1320,6 +1426,3 @@ if (exportChatButton) {
 // and their button listeners (savePersonaButton, clearPersonaFormButton)
 // have been moved to src/settings-personas-ui.ts
 // setupPersonaManagementListeners() is called in DOMContentLoaded to set them up.
-
-// Need to import loadAndDisplayApiKeys
-import { loadAndDisplayApiKeys } from './settings-api-keys-ui';

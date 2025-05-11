@@ -72,6 +72,9 @@ interface ChatSession {
 interface ChatPayload {
     modelEntryId: string; 
     history: ChatMessage[]; 
+    temperature?: number;
+    topP?: number;
+    maxTokens?: number;
 }
 
 interface Persona {
@@ -397,7 +400,13 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
                         return msg; 
                     });
 
-                const data = { model: modelId, messages: messagesForApi, temperature: temperature, max_tokens: maxTokens };
+                const data = { 
+                    model: modelId, 
+                    messages: messagesForApi, 
+                    temperature: payload.temperature ?? 0.7, 
+                    top_p: payload.topP ?? 1.0, 
+                    max_tokens: payload.maxTokens ?? 2048 
+                };
                 console.log(`Main: Calling ${provider} (${modelId}). Payload:`, JSON.stringify(data, null, 2));
                 
                 const response = await axios.post(url, data, { headers });
@@ -421,7 +430,15 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
                 const url = 'https://api.anthropic.com/v1/messages'; 
                 const headers = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }; 
                 const messagesForApi = formatHistoryForAnthropic(history); 
-                const requestData: any = { model: modelId, messages: messagesForApi, max_tokens: maxTokens, temperature: temperature }; 
+                const requestData: any = { 
+                    model: modelId, 
+                    messages: messagesForApi, 
+                    max_tokens: payload.maxTokens ?? 2048, // Anthropic uses max_tokens
+                    temperature: payload.temperature ?? 0.7 
+                }; 
+                if (payload.topP !== undefined) { // Anthropic supports top_p
+                    requestData.top_p = payload.topP;
+                }
                 const systemPromptMessage = history.find(msg => msg.role === 'system');
                 if (systemPromptMessage && typeof systemPromptMessage.content === 'string') {
                     requestData.system = systemPromptMessage.content;
@@ -438,7 +455,19 @@ ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`; 
                 const headers = { 'Content-Type': 'application/json' }; 
                 const contentsForApi = formatHistoryForGemini(history, currentModelEntry); 
-                const requestData: any = { contents: contentsForApi, generationConfig: { temperature: temperature, maxOutputTokens: maxTokens } };
+
+                // Log received payload parameters for Gemini
+                console.log(`Main (Gemini Pre-Config): Received payload.temperature: ${payload.temperature}, payload.topP: ${payload.topP}, payload.maxTokens: ${payload.maxTokens}`);
+
+                // Ensure payload parameters are used for Gemini
+                const requestData: any = { 
+                    contents: contentsForApi, 
+                    generationConfig: { 
+                        temperature: payload.temperature ?? 0.7, 
+                        topP: payload.topP ?? 1.0, 
+                        maxOutputTokens: payload.maxTokens ?? 8192 
+                    } 
+                };
                 
                 const systemInstructionMessage = history.find(msg => msg.role === 'system');
                 if (systemInstructionMessage && typeof systemInstructionMessage.content === 'string') {
