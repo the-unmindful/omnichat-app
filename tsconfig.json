@@ -21,7 +21,11 @@
     "resolveJsonModule": true, // Usually needed
 
     // --- Added Lib ---
-    "lib": ["DOM", "ES2020"] // Add core libraries
+    "lib": ["DOM", "ES2020"], // Add core libraries
+    // --- Additions for Lit ---
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+    // -------------------------
   },
   "include": [
     "src/**/*" // Include all files in the src directory

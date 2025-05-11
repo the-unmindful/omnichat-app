@@ -1,4 +1,6 @@
 import './styles.css';
+import './components/TestElement'; // Import the TestElement component to register it
+import './components/ChatMessageComponent'; // Import the ChatMessageComponent to register it
 import { marked } from 'marked'; // Import the marked library
 import { showToast } from './toast-notifications';
 import {
@@ -223,119 +225,98 @@ if (modelSelector) {
 
 // --- Chat Message Display Logic ---
 
+// Refactored to use chat-message-component
 async function addMessageToChat(message: ChatMessage) {
     if (!chatMessagesDiv) return;
-    const chatEntryDiv = document.createElement('div');
-    chatEntryDiv.classList.add('chat-entry', message.role);
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', message.role);
-    if (message.id) { messageElement.id = message.id; }
-    chatEntryDiv.appendChild(messageElement);
-    try {
-        const htmlContent = await marked.parse(message.content || '');
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        contentDiv.innerHTML = htmlContent;
-        messageElement.appendChild(contentDiv);
-        if (message.role === 'assistant' && message.modelUsed) {
-            const modelLabelDiv = document.createElement('div');
-            modelLabelDiv.className = 'model-label-outside';
-            let labelText = `Model: ${message.modelUsed}`;
-            if (message.personaUsedName) {
-                labelText += ` (Persona: ${message.personaUsedName})`;
-            }
-            modelLabelDiv.textContent = labelText;
-            chatEntryDiv.appendChild(modelLabelDiv);
-        }
-        if (message.role === 'assistant') {
-            const copyButton = document.createElement('button');
-            copyButton.innerHTML = '📋';
-            copyButton.className = 'copy-message-button';
-            copyButton.title = 'Copy Q&A';
-            const messageIndex = currentConversationMessages.findIndex(m => m === message);
-            if (messageIndex !== -1) {
-                copyButton.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    await handleCopyMessagePair(messageIndex, copyButton);
-                });
-                messageElement.appendChild(copyButton);
-            }
-        }
-    } catch (error) {
-        console.error("Error processing message content:", error);
-        const errorContentDiv = document.createElement('div');
-        errorContentDiv.className = 'message-content';
-        errorContentDiv.textContent = `[Error displaying message] ${message.content}`;
-        messageElement.innerHTML = '';
-        messageElement.appendChild(errorContentDiv);
-        if (message.role === 'assistant' && message.modelUsed) {
-             const modelLabelDiv = document.createElement('div');
-             modelLabelDiv.className = 'model-label-outside';
-             modelLabelDiv.textContent = `Model: ${message.modelUsed}`;
-             chatEntryDiv.appendChild(modelLabelDiv);
-        }
-        if (message.role === 'assistant') {
-            const copyButton = document.createElement('button');
-            copyButton.innerHTML = '📋';
-            copyButton.className = 'copy-message-button';
-            copyButton.title = 'Copy Q&A';
-            const messageIndex = currentConversationMessages.findIndex(m => m === message);
-            if (messageIndex !== -1) {
-                copyButton.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    await handleCopyMessagePair(messageIndex, copyButton);
-                });
-                messageElement.appendChild(copyButton);
+
+    // If this is a "real" message, remove the "empty chat" system message if it exists
+    if (!(message.role === 'system' && message.id === 'system-empty-chat-message')) {
+        // Iterate through children to find the component by its property
+        for (const child of Array.from(chatMessagesDiv.children)) {
+            if (child.tagName === 'CHAT-MESSAGE-COMPONENT' && (child as any).messageId === 'system-empty-chat-message') {
+                child.remove();
+                break; // Found and removed
             }
         }
     }
-    chatMessagesDiv.appendChild(chatEntryDiv);
-    if (chatMessagesDiv.contains(chatEntryDiv)) { chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; }
+
+    const messageComponent = document.createElement('chat-message-component');
+    messageComponent.role = message.role;
+    messageComponent.messageContent = message.content;
+    // The messageId property on the component is used by its render method to set the id on the inner bubble.
+    // For the thinking message, its host ID is set directly in handleSendMessage.
+    if (message.id) {
+      messageComponent.messageId = message.id;
+    }
+    if (message.modelUsed) {
+      messageComponent.modelUsed = message.modelUsed;
+    }
+    if (message.personaUsedName) {
+      messageComponent.personaUsedName = message.personaUsedName;
+    }
+
+    if (message.role === 'assistant') {
+      messageComponent.onCopy = async (componentInstance) => {
+        // Find the index of the message this component represents
+        // This is a bit indirect; ideally, the component would have its index or full message object.
+        // For now, we'll find it based on content and role if ID isn't perfectly unique or available.
+        // A more robust way would be to pass the full ChatMessage object or its index to the component.
+        const messageIndex = currentConversationMessages.findIndex(
+          (m) => m.content === componentInstance.messageContent && m.role === 'assistant' && m.modelUsed === componentInstance.modelUsed
+        );
+
+        if (messageIndex !== -1) {
+          // We need to pass the original button element if handleCopyMessagePair expects it for UI updates.
+          // Since the button is inside the shadow DOM, we'll pass null and let the component handle its own UI.
+          // The component's _handleCopy method already updates its internal state for the 'Copied!' text.
+          await handleCopyMessagePair(messageIndex, null); // Pass null for buttonElement
+        } else {
+          console.warn("Could not find message in currentConversationMessages for copy callback.");
+          showToast("Error finding message to copy.", "error");
+        }
+      };
+    }
+
+    chatMessagesDiv.appendChild(messageComponent);
+    // Scroll to bottom
+    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
 }
 
+
 // --- Copy Message Pair Logic ---
-async function handleCopyMessagePair(assistantMessageIndex: number, buttonElement: HTMLButtonElement) {
+// Modified to not require buttonElement for UI updates, as component handles its own.
+async function handleCopyMessagePair(assistantMessageIndex: number, _buttonElement: HTMLButtonElement | null) {
     if (assistantMessageIndex < 0 || assistantMessageIndex >= currentConversationMessages.length) {
         console.error("Invalid message index for copy:", assistantMessageIndex);
+        showToast("Error: Invalid message index for copy.", "error");
         return;
     }
     const assistantMsg = currentConversationMessages[assistantMessageIndex];
     if (assistantMsg.role !== 'assistant') {
         console.warn("Copy Q&A called on non-assistant message. Index:", assistantMessageIndex);
-        return;
+        return; // Or showToast
     }
+
     let userMsg: ChatMessage | null = null;
+    // Find the preceding user message
     for (let i = assistantMessageIndex - 1; i >= 0; i--) {
         if (currentConversationMessages[i].role === 'user') {
             userMsg = currentConversationMessages[i];
             break;
         }
     }
-    if (!userMsg) {
-        console.log("No preceding user message found, copying assistant message only.");
-        let textToCopy = `**Assistant (Model: ${assistantMsg.modelUsed || 'Unknown'})**:\n\n${assistantMsg.content}`;
-        const success = await window.electronAPI.copyTextToClipboard(textToCopy);
-        if (success) {
-            const originalText = buttonElement.innerHTML;
-            buttonElement.innerHTML = 'Copied!';
-            setTimeout(() => { buttonElement.innerHTML = originalText; }, 1500);
-        } else {
-            showToast("Failed to copy message.", "error");
-        }
-        return;
+
+    let textToCopy = "";
+    if (userMsg) {
+        textToCopy = `**User:**\n\n${userMsg.content}\n\n---\n\n`;
     }
-    let textToCopy = `**User:**\n\n${userMsg.content}\n\n---\n\n`;
     textToCopy += `**Assistant (Model: ${assistantMsg.modelUsed || 'Unknown'})**:\n\n${assistantMsg.content}`;
+
     try {
         const success = await window.electronAPI.copyTextToClipboard(textToCopy);
         if (success) {
-            const originalText = buttonElement.innerHTML;
-            buttonElement.innerHTML = 'Copied!';
-            buttonElement.disabled = true;
-            setTimeout(() => {
-                buttonElement.innerHTML = originalText;
-                buttonElement.disabled = false;
-            }, 1500);
+            // The component itself will show "Copied!"
+            // If we wanted a global toast: showToast("Copied to clipboard!", "success");
         } else {
             showToast("Failed to copy Q&A to clipboard.", "error");
         }
@@ -345,8 +326,18 @@ async function handleCopyMessagePair(assistantMessageIndex: number, buttonElemen
     }
 }
 
+
 function removeMessageById(id: string) {
-     const messageElement = document.getElementById(id); if (messageElement) { messageElement.remove(); }
+    const elementToRemove = document.getElementById(id);
+    if (elementToRemove && elementToRemove.tagName === 'CHAT-MESSAGE-COMPONENT') {
+        elementToRemove.remove();
+    } else if (elementToRemove) {
+        // Fallback for safety, though ideally not needed with new approach
+        console.warn(`removeMessageById: Element with ID ${id} was not a CHAT-MESSAGE-COMPONENT. Removing it directly.`);
+        elementToRemove.remove();
+    } else {
+        console.warn(`removeMessageById: Element with ID ${id} not found.`);
+    }
 }
 
 // --- Send Message Logic ---
@@ -475,7 +466,15 @@ async function handleSendMessage() {
     }
 
     const thinkingMessageId = `thinking-${Date.now()}`;
-    addMessageToChat({ role: 'assistant', content: '...', id: thinkingMessageId });
+    // Create and add thinking component directly with host ID
+    const thinkingComponent = document.createElement('chat-message-component');
+    thinkingComponent.id = thinkingMessageId;
+    thinkingComponent.role = 'assistant';
+    thinkingComponent.messageContent = '...';
+    if (chatMessagesDiv) {
+        chatMessagesDiv.appendChild(thinkingComponent);
+        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+    }
 
     // Prepare historyForPayload for the LLM
     // Deep clone currentConversationMessages, then replace the last user message's content with contentForLlm
@@ -913,7 +912,8 @@ async function selectChatSession(sessionId: string) {
         if (chatMessagesDiv) {
             chatMessagesDiv.innerHTML = '';
             if (currentConversationMessages.length === 0) {
-                addMessageToChat({role: 'system', content: 'This chat is empty. Send a message to start!'});
+                // Add the "empty chat" message using addMessageToChat so it's a component and can be managed
+                addMessageToChat({role: 'system', content: 'This chat is empty. Send a message to start!', id: 'system-empty-chat-message'});
             } else {
                 currentConversationMessages.forEach(msg => addMessageToChat(msg));
             }
