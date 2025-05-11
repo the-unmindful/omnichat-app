@@ -331,6 +331,21 @@ body {
     background-color: var(--bg-hover-subtle);
 }
 
+.header-modality-tags {
+    display: inline-flex; /* Use flex to allow gap if multiple tags */
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-left: var(--spacing-sm); /* Space it from the model selector */
+    /* font-size: 0.85em; */ /* Make tags in header slightly smaller than base text */
+}
+
+/* Adjust modality tag padding/font if needed for header context */
+.header-modality-tags .modality-tag {
+    padding: 1px 5px; /* Slightly smaller padding */
+    font-size: 0.8em;  /* Smaller font size for header tags */
+    /* line-height: 1.1; */ /* Adjust line height if necessary */
+}
+
 
 /* 7. Chat Messages Area */
 .chat-messages {

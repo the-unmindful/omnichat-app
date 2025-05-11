@@ -291,18 +291,20 @@ ipcMain.handle('delete-enabled-model', async (event, modelEntryId: string): Prom
         return true;
     } catch (error) { console.error('Main: Failed to delete enabled model:', error); return false; }
 });
-ipcMain.handle('get-models-for-chat-dropdown', async (event): Promise<AvailableModel[]> => {
+ipcMain.handle('get-models-for-chat-dropdown', async (event): Promise<EnabledModelEntry[]> => {
     try {
-        const enabledModels = store.get('enabledModels');
-        const apiKeys = store.get('apiKeys');
-        const dropdownModels: AvailableModel[] = enabledModels.map(model => {
-             const linkedKey = apiKeys.find(key => key.id === model.apiKeyId);
-             const keyLabelHint = linkedKey ? ` (Key: ${linkedKey.label || 'Untitled'})` : ' (Key Missing!)';
-            return { modelEntryId: model.modelEntryId, displayLabel: `${model.userLabel || model.modelId} (${model.provider}: ${model.modelId})${keyLabelHint}`};
+        const enabledModels: EnabledModelEntry[] = store.get('enabledModels', []);
+        // Sort by userLabel, then by modelId as a fallback for consistent ordering
+        enabledModels.sort((a, b) => {
+            const labelA = a.userLabel || a.modelId;
+            const labelB = b.userLabel || b.modelId;
+            return labelA.localeCompare(labelB);
         });
-        dropdownModels.sort((a, b) => a.displayLabel.localeCompare(b.displayLabel));
-        return dropdownModels;
-    } catch (error) { console.error('Main: Failed to get models for chat dropdown:', error); return []; }
+        return enabledModels;
+    } catch (error) { 
+        console.error('Main: Failed to get models for chat dropdown:', error); 
+        return []; 
+    }
 });
 
 ipcMain.handle('send-chat-message', async (event, payload: ChatPayload): Promise<AssistantOutputContent> => {

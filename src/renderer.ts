@@ -106,7 +106,7 @@ declare global {
             deleteEnabledModel: (modelEntryId: string) => Promise<boolean>;
 
             // Get Models for Chat Dropdown
-            getModelsForChatDropdown: () => Promise<AvailableModel[]>; // Gets simplified list
+            getModelsForChatDropdown: () => Promise<EnabledModelEntry[]>; // NOW RETURNS FULL ENTRIES
 
             // Chat Function
             sendChatMessage: (payload: ChatPayload) => Promise<AssistantOutputContent>; // Updated return type
@@ -165,6 +165,7 @@ console.log('👋 Renderer script loaded (Refactored with UI elements and Toast 
 // --- State Variables ---
 let currentSelectedModelEntryId: string | null = null; // Store the ID of the selected enabled model config
 export let cachedApiKeys: ApiKeyEntry[] = []; // Cache keys for populating dropdowns
+let cachedEnabledModels: EnabledModelEntry[] = []; // NEW: Cache for full enabled model entries
 
 // NEW State Variables for Multi-Session Management
 let allSessionsMetadata: PreloadChatSessionMetadata[] = []; // Use imported type
@@ -198,54 +199,104 @@ window.addEventListener('click', (event) => { if (event.target === settingsModal
 // Add Enabled Model button listener is now set up by setupEnabledModelsAddListeners()
 
 // --- Model Selection Logic ---
+function updateChatHeaderModalityTags(model: EnabledModelEntry | null) {
+    const tagsContainer = document.getElementById('chat-header-modality-tags');
+    if (!tagsContainer) return;
+
+    if (model && model.expectedOutputModalities && model.expectedOutputModalities.length > 0) {
+        // Only show tags if there's something other than just "text" or if explicitly "text" and "image"
+        const hasImage = model.expectedOutputModalities.includes('image');
+        const hasText = model.expectedOutputModalities.includes('text');
+
+        if (hasImage || (hasText && model.expectedOutputModalities.length > 1) ) { // Show tags if image is present, or if multiple modalities including text
+            tagsContainer.innerHTML = model.expectedOutputModalities.map(m => 
+                `<span class="modality-tag ${m.toLowerCase()}-modality">${m.charAt(0).toUpperCase() + m.slice(1)}</span>`
+            ).join(' ');
+            tagsContainer.style.display = 'inline-flex'; // Use flex for gap if multiple tags
+        } else if (hasText && model.expectedOutputModalities.length === 1) {
+            // Optionally, show a subtle "Text" tag or nothing if only text
+            // tagsContainer.innerHTML = `<span class="modality-tag text-modality">Text</span>`;
+            // tagsContainer.style.display = 'inline-flex';
+            tagsContainer.innerHTML = ''; // Or hide if only text
+            tagsContainer.style.display = 'none';
+        } else {
+            tagsContainer.innerHTML = '';
+            tagsContainer.style.display = 'none';
+        }
+    } else if (model) { // Model exists but no modalities defined, assume text, hide tags
+        tagsContainer.innerHTML = '';
+        tagsContainer.style.display = 'none';
+    } else { // No model selected
+        tagsContainer.innerHTML = '';
+        tagsContainer.style.display = 'none';
+    }
+}
+
+
 export async function loadAndPopulateChatModelDropdown() {
     console.log('Renderer: Requesting models for chat dropdown...');
     if (!modelSelector) return;
     try {
-        const modelsForDropdown = await window.electronAPI.getModelsForChatDropdown();
-        console.log('Renderer: Received models for dropdown', modelsForDropdown.length);
-        while (modelSelector.options.length > 1) { modelSelector.remove(1); }
-        if (modelsForDropdown.length === 0) {
+        // Now expects EnabledModelEntry[]
+        cachedEnabledModels = await window.electronAPI.getModelsForChatDropdown(); 
+        console.log('Renderer: Received enabled models', cachedEnabledModels.length);
+        
+        while (modelSelector.options.length > 1) { modelSelector.remove(1); } // Clear existing options except the placeholder
+
+        if (cachedEnabledModels.length === 0) {
             modelSelector.disabled = true;
             modelSelector.options[0].text = "-- No Models Configured --";
-             updateChatHeaderModelLabel(null);
         } else {
             modelSelector.disabled = false;
             modelSelector.options[0].text = "-- Select Model --";
-            modelsForDropdown.forEach(model => {
+            // Create a map for API key labels for tooltip generation
+            const apiKeyLabels = new Map(cachedApiKeys.map(k => [k.id, k.label]));
+
+            cachedEnabledModels.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model.modelEntryId;
-                option.textContent = model.displayLabel;
+                
+                // Construct the full display label, similar to how it was done in main process before
+                const linkedKey = cachedApiKeys.find(key => key.id === model.apiKeyId);
+                const keyLabelHint = linkedKey ? ` (Key: ${linkedKey.label || 'Untitled'})` : ' (Key Missing!)';
+                const fullDisplayLabel = `${model.userLabel || model.modelId} (Provider: ${model.provider}, ID: ${model.modelId})${keyLabelHint}`;
+                
+                option.textContent = fullDisplayLabel;
+                option.title = fullDisplayLabel; // Tooltip can also be the full label
                 modelSelector.appendChild(option);
             });
-             updateChatHeaderModelLabel(null);
         }
+        // Trigger a change event to update header based on current selection (or lack thereof)
+        handleModelSelectionChange(); 
+
     } catch (error) {
-        console.error('Renderer: Error fetching models for chat dropdown:', error);
+        console.error('Renderer: Error fetching/populating models for chat dropdown:', error);
         modelSelector.disabled = true;
         modelSelector.options[0].text = "-- Error Loading Models --";
-         updateChatHeaderModelLabel(null);
+        handleModelSelectionChange(); // Update header even on error
     }
 }
 
-function updateChatHeaderModelLabel(selectedOptionText: string | null) {
-    if (!chatHeaderModelSpan) return;
-    if (selectedOptionText) {
-        chatHeaderModelSpan.textContent = `Model: ${selectedOptionText}`;
-        chatHeaderModelSpan.title = `Using configuration: ${selectedOptionText}`;
+function handleModelSelectionChange() {
+    currentSelectedModelEntryId = modelSelector.value || null;
+    const selectedModel = cachedEnabledModels.find(m => m.modelEntryId === currentSelectedModelEntryId);
+
+    if (selectedModel) {
+        const linkedKey = cachedApiKeys.find(key => key.id === selectedModel.apiKeyId);
+        const keyLabelHint = linkedKey ? ` (Key: ${linkedKey.label || 'Untitled'})` : ' (Key Missing!)';
+        const fullDisplayLabel = `${selectedModel.userLabel || selectedModel.modelId} (Provider: ${selectedModel.provider}, ID: ${selectedModel.modelId})${keyLabelHint}`;
+        
+        console.log(`Renderer: Chat model selection changed to Entry ID: ${currentSelectedModelEntryId} (Full Label: ${fullDisplayLabel})`);
+        modelSelector.title = fullDisplayLabel; // Set tooltip on the select element
     } else {
-        chatHeaderModelSpan.textContent = `No Model Selected`;
-        chatHeaderModelSpan.title = '';
+        modelSelector.title = 'No model selected';
+        console.log('Renderer: No model selected or model not found in cache.');
     }
+    updateChatHeaderModalityTags(selectedModel || null);
 }
 
 if (modelSelector) {
-    modelSelector.addEventListener('change', () => {
-        currentSelectedModelEntryId = modelSelector.value || null;
-        const selectedOptionText = modelSelector.value ? modelSelector.options[modelSelector.selectedIndex].text : null;
-        console.log(`Renderer: Chat model selection changed to Entry ID: ${currentSelectedModelEntryId} (Label: ${selectedOptionText})`);
-         updateChatHeaderModelLabel(selectedOptionText);
-    });
+    modelSelector.addEventListener('change', handleModelSelectionChange);
 }
 
 // --- Chat Message Display Logic ---
@@ -766,7 +817,12 @@ if (messageInput) {
 
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', async () => {
-    loadAndPopulateChatModelDropdown();
+    // Ensure API keys are loaded and cached first, as model dropdown depends on them for labels
+    await loadAndDisplayApiKeys(); // This function is exported from settings-api-keys-ui.ts
+                                 // and updates the cachedApiKeys in renderer.ts
+    
+    loadAndPopulateChatModelDropdown(); // Now this can safely use cachedApiKeys
+    
     await loadAndDisplayChatSessions(); // This will now also init displayedSessionsMetadata
     await populatePersonaSelector();
     setupApiKeysAddListeners();
@@ -1264,3 +1320,6 @@ if (exportChatButton) {
 // and their button listeners (savePersonaButton, clearPersonaFormButton)
 // have been moved to src/settings-personas-ui.ts
 // setupPersonaManagementListeners() is called in DOMContentLoaded to set them up.
+
+// Need to import loadAndDisplayApiKeys
+import { loadAndDisplayApiKeys } from './settings-api-keys-ui';
