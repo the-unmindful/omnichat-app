@@ -24,8 +24,6 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Test Lit Component -->
-            <test-element greeting="Hi" name="OmniChat User"></test-element>
             
             <!-- Chat Header -->
             <div class="chat-header">
@@ -50,7 +48,7 @@
             <!-- Chat Input Area -->
             <div class="chat-input-area">
                 <div class="attachment-controls">
-                    <button id="attach-file-button" title="Attach File (TXT, HTML, MD)">📎</button>
+                    <button id="attach-file-button" title="Attach File (TXT, HTML, MD, PNG, JPG, WEBP, GIF)">📎</button>
                 </div>
                 <textarea id="message-input" placeholder="Type your message here..."></textarea>
                 <div id="selected-attachment-display" class="selected-attachment-display">
@@ -114,6 +112,13 @@
                          <option value="">-- Select API Key to Use --</option>
                          <!-- API Keys will be populated here by JS -->
                     </select>
+                            <div class="form-group">
+                                <label>Expected Output Modalities:</label>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="enabledModelModalitiesText" name="modalities" value="text" checked> <label for="enabledModelModalitiesText">Text</label>
+                                    <input type="checkbox" id="enabledModelModalitiesImage" name="modalities" value="image"> <label for="enabledModelModalitiesImage">Image</label>
+                                </div>
+                            </div>
                     <button id="add-enabled-model-button">Add Enabled Model</button>
                 </div>
 

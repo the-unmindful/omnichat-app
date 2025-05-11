@@ -4,7 +4,11 @@ import {
     enabledModelUserLabelInput, 
     enabledModelProviderSelect, 
     enabledModelIdInput, 
-    enabledModelApiKeyLinkSelect
+    enabledModelApiKeyLinkSelect,
+    // Assuming these will be queryable or added to ui-elements.ts exports
+    // For now, we'll get them by ID directly in the function.
+    // enabledModelModalitiesText, 
+    // enabledModelModalitiesImage 
 } from './ui-elements';
 import { showToast } from './toast-notifications';
 import { ApiKeyEntry, EnabledModelEntry, cachedApiKeys, loadAndPopulateChatModelDropdown } from './renderer'; // Import necessary types, state, and functions
@@ -24,12 +28,16 @@ function displayEnabledModelsInSettings(models: EnabledModelEntry[]) {
         modelEntry.className = 'model-entry';
         modelEntry.setAttribute('data-model-entry-id', model.modelEntryId);
         const linkedKeyLabel = keyMap.get(model.apiKeyId) || 'Unknown Key';
+        const modalitiesString = model.expectedOutputModalities && model.expectedOutputModalities.length > 0 
+            ? model.expectedOutputModalities.join(', ') 
+            : 'text (default)';
         modelEntry.innerHTML = `
             <div class="model-info">
                 <span class="model-user-label">${model.userLabel}</span>
                 <span class="model-provider-info">(${model.provider})</span>
                 <span class="model-id-info">${model.modelId}</span>
                 <span class="model-key-link">using key: ${linkedKeyLabel}</span>
+                <span class="model-modalities" style="font-size: 0.8em; color: #555;">Modalities: ${modalitiesString}</span>
             </div>
             <div class="model-actions">
                 <button class="delete-model-button" title="Delete This Model Configuration">Delete</button>
@@ -112,8 +120,32 @@ export function setupAddEnabledModelButtonListeners() {
                 showToast('Please fill in all fields for the enabled model (Name, Provider, Model ID, and linked API Key).', 'error');
                 return;
             }
-            const modelData = { userLabel, provider, modelId, apiKeyId };
-            console.log(`EnabledModelsUI: Requesting to add enabled model: ${userLabel}`);
+
+            const modalitiesTextCheckbox = document.getElementById('enabledModelModalitiesText') as HTMLInputElement | null;
+            const modalitiesImageCheckbox = document.getElementById('enabledModelModalitiesImage') as HTMLInputElement | null;
+
+            const expectedOutputModalities: Array<'text' | 'image'> = [];
+            if (modalitiesTextCheckbox?.checked) {
+                expectedOutputModalities.push('text');
+            }
+            if (modalitiesImageCheckbox?.checked) {
+                expectedOutputModalities.push('image');
+            }
+            // Ensure 'text' is always included if no specific modality is chosen, or if only image is chosen (as text often accompanies image)
+            // However, if only 'image' is explicitly chosen, we respect that. If neither, default to text.
+            if (expectedOutputModalities.length === 0) {
+                expectedOutputModalities.push('text'); // Default to text if nothing selected
+            }
+
+
+            const modelData = { 
+                userLabel, 
+                provider, 
+                modelId, 
+                apiKeyId,
+                expectedOutputModalities // Add the new property
+            };
+            console.log(`EnabledModelsUI: Requesting to add enabled model: ${userLabel}, Modalities: ${expectedOutputModalities.join(', ')}`);
             addEnabledModelButton.disabled = true; 
             addEnabledModelButton.textContent = 'Adding...';
             try {
@@ -124,6 +156,8 @@ export function setupAddEnabledModelButtonListeners() {
                     enabledModelProviderSelect.value = '';
                     enabledModelIdInput.value = '';
                     enabledModelApiKeyLinkSelect.value = '';
+                    if (modalitiesTextCheckbox) modalitiesTextCheckbox.checked = true; // Reset to default
+                    if (modalitiesImageCheckbox) modalitiesImageCheckbox.checked = false; // Reset to default
                     loadAndDisplayEnabledModels(); // Call local load function
                     loadAndPopulateChatModelDropdown(); // Imported from renderer
                     showToast(`Enabled model "${userLabel}" added successfully.`, 'success');

@@ -58,10 +58,25 @@ export interface AssistantOutputContent {
     error_message?: string;
 }
 
+// Define types for multi-modal content parts (OpenAI vision compatible)
+export interface TextContentPart {
+    type: 'text';
+    text: string;
+}
+export interface ImageContentPart {
+    type: 'image_url';
+    image_url: {
+        url: string; // e.g., "data:image/jpeg;base64,..." or a public URL
+        // detail?: 'low' | 'high' | 'auto'; // Optional for OpenAI
+    };
+}
+export type UserContent = string | Array<TextContentPart | ImageContentPart>;
+
+
 interface ChatMessage {
     role: 'user' | 'assistant' | 'system' | 'error';
-    content: string; // For user messages, system prompts, and simple text/error fallback
-    assistantOutput?: AssistantOutputContent; // NEW: Structured output for assistant
+    content: UserContent; // Updated to support multi-modal user content
+    assistantOutput?: AssistantOutputContent; // For assistant's structured output
     modelUsed?: string; // Optional: track which model config was used (modelEntryId or userLabel)
     id?: string;
     personaUsedId?: string | null;    // NEW
@@ -121,7 +136,7 @@ declare global {
 
             // Attachment Handling (NEW)
             selectFile: () => Promise<{ originalPath: string; name: string; type: string; size: number } | null>;
-            extractTextFromFile: (originalPath: string, fileType: string) => Promise<{ extractedText: string; error?: string }>;
+            extractTextFromFile: (originalPath: string, fileType: string) => Promise<{ extractedText?: string; base64ImageData?: string; imageMimeType?: string; error?: string }>;
         }
     }
 }
@@ -257,7 +272,23 @@ async function addMessageToChat(message: ChatMessage) {
     console.log(`Renderer: addMessageToChat called for role: ${message.role}, id: ${message.id || 'N/A'}`);
     const messageComponent = document.createElement('chat-message-component');
     messageComponent.role = message.role;
-    messageComponent.messageContent = message.content;
+    // messageComponent.messageContent expects a string.
+    // If message.content is UserContent (array for multimodal), extract text for display.
+    // This primarily affects reloading history for user messages that were multimodal.
+    // For new user messages, `userMessageForDisplay.content` is already a string.
+    let contentForComponent: string;
+    if (typeof message.content === 'string') {
+        contentForComponent = message.content;
+    } else if (Array.isArray(message.content)) {
+        // For multimodal user messages being reloaded, find the first text part for display,
+        // or use a placeholder. Assistant messages with images use assistantOutput.text_content.
+        const textPart = message.content.find(part => part.type === 'text') as TextContentPart | undefined;
+        contentForComponent = textPart ? textPart.text : '[Multi-modal content]';
+    } else {
+        contentForComponent = ''; // Fallback for unknown content structure
+    }
+    messageComponent.messageContent = contentForComponent; // Assign the processed string
+
     // The messageId property on the component is used by its render method to set the id on the inner bubble.
     // For the thinking message, its host ID is set directly in handleSendMessage.
     if (message.id) {
@@ -265,6 +296,19 @@ async function addMessageToChat(message: ChatMessage) {
     }
 
     // Pass appropriate content to the component
+    // messageComponent.messageContent expects a string.
+    // If message.content is UserContent (array for multimodal user messages), extract text for display.
+    let displayableContent: string;
+    if (typeof message.content === 'string') {
+        displayableContent = message.content;
+    } else if (Array.isArray(message.content)) {
+        // For multimodal user messages, find the first text part for display, or use a placeholder.
+        const textPart = message.content.find(part => part.type === 'text') as TextContentPart | undefined;
+        displayableContent = textPart ? textPart.text : '[Multi-modal content]';
+    } else {
+        displayableContent = ''; // Fallback for unknown content structure
+    }
+
     if (message.role === 'assistant' && message.assistantOutput) {
         messageComponent.outputType = message.assistantOutput.type; 
         console.log(`Renderer: Setting component outputType to: ${messageComponent.outputType}`);
@@ -273,20 +317,22 @@ async function addMessageToChat(message: ChatMessage) {
             messageComponent.messageContent = message.assistantOutput.text_content;
         } else if (message.assistantOutput.type === 'image' && message.assistantOutput.image_url) {
             messageComponent.imageUrl = message.assistantOutput.image_url;
-            messageComponent.messageContent = message.assistantOutput.text_content || ''; 
+            // For assistant image messages, message.content (which is finalAssistantMessageContent) is already a string like "[Image]" or caption
+            messageComponent.messageContent = displayableContent; // Use the string version from message.content
             console.log(`Renderer: Setting component imageUrl to: ${messageComponent.imageUrl}`);
         } else if (message.assistantOutput.type === 'error' && message.assistantOutput.error_message) {
             messageComponent.messageContent = message.assistantOutput.error_message;
         } else if (message.assistantOutput.type === 'loading') {
             messageComponent.messageContent = '...'; 
-        } else {
-            messageComponent.messageContent = message.content; 
+        } else { // Fallback for assistant if output type is unhandled
+            messageComponent.messageContent = displayableContent; 
             messageComponent.outputType = 'text'; 
         }
-    } else { 
-        messageComponent.messageContent = message.content;
+    } else { // For user, system (non-error)
+        messageComponent.messageContent = displayableContent;
         messageComponent.outputType = message.role === 'error' ? 'error' : 'text';
     }
+    // messageComponent.messageContent is now guaranteed to be a string from the logic above.
     console.log(`Renderer: Setting component messageContent to (first 50 chars): "${messageComponent.messageContent.substring(0,50)}"`);
 
     if (message.modelUsed) {
@@ -335,11 +381,10 @@ async function handleCopyMessagePair(assistantMessageIndex: number, _buttonEleme
     const assistantMsg = currentConversationMessages[assistantMessageIndex];
     if (assistantMsg.role !== 'assistant') {
         console.warn("Copy Q&A called on non-assistant message. Index:", assistantMessageIndex);
-        return; // Or showToast
+        return; 
     }
 
     let userMsg: ChatMessage | null = null;
-    // Find the preceding user message
     for (let i = assistantMessageIndex - 1; i >= 0; i--) {
         if (currentConversationMessages[i].role === 'user') {
             userMsg = currentConversationMessages[i];
@@ -349,15 +394,46 @@ async function handleCopyMessagePair(assistantMessageIndex: number, _buttonEleme
 
     let textToCopy = "";
     if (userMsg) {
-        textToCopy = `**User:**\n\n${userMsg.content}\n\n---\n\n`;
+        let userContentText = '';
+        if (typeof userMsg.content === 'string') {
+            userContentText = userMsg.content;
+        } else if (Array.isArray(userMsg.content)) {
+            userMsg.content.forEach(part => {
+                if (part.type === 'text') {
+                    userContentText += part.text;
+                } else if (part.type === 'image_url') {
+                    userContentText += '[Image Content]'; 
+                }
+            });
+        }
+        textToCopy = `**User:**\n\n${userContentText}\n\n---\n\n`;
     }
-    textToCopy += `**Assistant (Model: ${assistantMsg.modelUsed || 'Unknown'})**:\n\n${assistantMsg.content}`;
+
+    // assistantMsg.content is already a string (caption or text response from finalAssistantMessageContent)
+    // or it's the error message string if role is 'error'
+    let assistantContentText = '';
+    if (typeof assistantMsg.content === 'string') {
+        assistantContentText = assistantMsg.content;
+    } else {
+        // This case should ideally not happen for assistant messages if they are processed correctly
+        // into finalAssistantMessageContent (string) before being stored.
+        // However, as a fallback, handle it like user content.
+        if (Array.isArray(assistantMsg.content)) {
+             assistantMsg.content.forEach(part => {
+                if (part.type === 'text') {
+                    assistantContentText += part.text;
+                } else if (part.type === 'image_url') {
+                    assistantContentText += '[Image Content]';
+                }
+            });
+        }
+    }
+    textToCopy += `**Assistant (Model: ${assistantMsg.modelUsed || 'Unknown'})**:\n\n${assistantContentText}`;
 
     try {
         const success = await window.electronAPI.copyTextToClipboard(textToCopy);
         if (success) {
-            // The component itself will show "Copied!"
-            // If we wanted a global toast: showToast("Copied to clipboard!", "success");
+            // UI update is handled by the component itself
         } else {
             showToast("Failed to copy Q&A to clipboard.", "error");
         }
@@ -393,8 +469,9 @@ async function handleSendMessage() {
     }
 
     const typedMessageText = messageInput.value.trim();
-    let contentForLlm = typedMessageText;
-    let displayContent = typedMessageText;
+    // contentForLlm will now be of type UserContent (string or array of parts)
+    let contentForLlm: UserContent = typedMessageText; 
+    let displayContent = typedMessageText; // displayContent remains a string for the user's message bubble
 
     const attachmentInfo = getCurrentAttachmentInfo();
 
@@ -421,14 +498,27 @@ async function handleSendMessage() {
                 if (extractionResult.extractedText && extractionResult.extractedText.trim() !== "") {
                     contentForLlm = `[Content from attachment: ${attachmentInfo.name}]\n\n${extractionResult.extractedText.trim()}\n\n`;
                     if (typedMessageText) {
-                        contentForLlm += `User's prompt:\n${typedMessageText}`;
+                        contentForLlm = `[Content from attachment: ${attachmentInfo.name}]\n\n${extractionResult.extractedText.trim()}\n\nUser's prompt:\n${typedMessageText}`;
                     } else {
-                        // No typed text, but attachment has content.
-                        // For display, use a placeholder. contentForLlm has the attachment text.
+                        contentForLlm = `[Content from attachment: ${attachmentInfo.name}]\n\n${extractionResult.extractedText.trim()}`;
                         displayContent = `[Attachment: ${attachmentInfo.name} processed for context]`;
                     }
                     markCurrentAttachmentContextAsCommitted();
-                } else { // Attachment was empty or yielded no text
+                } else if (extractionResult.base64ImageData && extractionResult.imageMimeType) {
+                    // Image attachment
+                    const imagePart: ImageContentPart = {
+                        type: 'image_url',
+                        image_url: { url: `data:${extractionResult.imageMimeType};base64,${extractionResult.base64ImageData}` }
+                    };
+                    if (typedMessageText) {
+                        contentForLlm = [imagePart, { type: 'text', text: typedMessageText }];
+                        displayContent = `[Image: ${attachmentInfo.name}] ${typedMessageText}`; // For user's own bubble
+                    } else {
+                        contentForLlm = [imagePart, { type: 'text', text: `Describe this image: ${attachmentInfo.name}` }]; // Default prompt if no text
+                        displayContent = `[Image: ${attachmentInfo.name} sent for analysis]`; // For user's own bubble
+                    }
+                    markCurrentAttachmentContextAsCommitted();
+                } else { // Attachment was empty or yielded no text/image
                     if (!typedMessageText) { // Attachment empty AND no typed text
                         showToast("Attached file is empty and no message typed.", "info");
                         if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
@@ -454,8 +544,36 @@ async function handleSendMessage() {
     }
 
     // Step 2: Validate if there's anything to send to LLM.
-    // contentForLlm is what will be sent. If it's empty after all processing (e.g. empty typed text and empty file), there's nothing to send.
-    if (!contentForLlm.trim()) {
+    // contentForLlm is what will be sent. 
+    // Step 2: Validate if there's anything to send to LLM.
+    let isEmptyContent = true; // Assume empty by default
+    if (typeof contentForLlm === 'string') {
+        if (contentForLlm.trim()) {
+            isEmptyContent = false;
+        }
+    } else if (Array.isArray(contentForLlm)) {
+        // If it's an array, it must have at least one part.
+        // And if it's only text parts, at least one must be non-empty.
+        // If it contains an image part, it's considered non-empty.
+        if (contentForLlm.length > 0) {
+            if (contentForLlm.some(part => part.type === 'image_url')) {
+                isEmptyContent = false;
+            } else if (contentForLlm.some(part => part.type === 'text' && part.text.trim())) {
+                isEmptyContent = false;
+            }
+        }
+    }
+    // This check is specifically for the case where there was no typed text AND the attachment processing (which happened inside the 'if (attachmentInfo)' block)
+    // did not result in 'contentForLlm' being populated with anything meaningful (e.g., an empty file was attached).
+    // If 'contentForLlm' is still just an empty string (because typedMessageText was empty and attachment yielded nothing), it's empty.
+    if (!typedMessageText && attachmentInfo && typeof contentForLlm === 'string' && !contentForLlm.trim()) {
+         // This condition means typed text was empty, an attachment was present, but contentForLlm (which would have been updated by attachment processing)
+         // is still an empty string. This implies the attachment processing didn't add any content.
+         isEmptyContent = true;
+    }
+
+
+    if (isEmptyContent) {
         showToast("Please type a message or attach a file with actual content.", "info");
         if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'Send'; }
         return;
@@ -523,31 +641,30 @@ async function handleSendMessage() {
     }
 
     // Prepare historyForPayload for the LLM
-    // Deep clone currentConversationMessages, then replace the last user message's content with contentForLlm
-    let historyForPayload = JSON.parse(JSON.stringify(currentConversationMessages));
+    // Deep clone currentConversationMessages. 
+    // The 'content' of the last user message in this clone will be replaced with `contentForLlm`.
+    // `userMessageForDisplay.content` (which is always a string) is what's shown in the UI for the user's own message.
+    let historyForPayload: ChatMessage[] = JSON.parse(JSON.stringify(currentConversationMessages)); 
+    
     if (historyForPayload.length > 0) {
         const lastMessageIndex = historyForPayload.length - 1;
-        // Ensure the last message is indeed the one we just added for display
-        if (historyForPayload[lastMessageIndex].role === 'user' && historyForPayload[lastMessageIndex].content === displayContent) {
-            historyForPayload[lastMessageIndex].content = contentForLlm;
+        if (historyForPayload[lastMessageIndex].role === 'user') {
+            // Replace the content of the last user message in the payload history
+            // with the potentially multi-modal contentForLlm.
+            // The original userMessageForDisplay (with string content) is already in currentConversationMessages for UI and storage.
+            historyForPayload[lastMessageIndex].content = contentForLlm; 
         } else {
-            // This case might occur if currentConversationMessages was somehow modified between adding userMessageForDisplay and here,
-            // or if displayContent was empty and userMessageForDisplay.content was also empty.
-            // For robustness, if the last message isn't the one we expect, log a warning and try to append.
-            // However, the primary logic relies on replacing the content of the already added (and displayed) message shell.
-            console.warn("Renderer: Last message in historyForPayload didn't match userMessageForDisplay as expected. This might indicate an issue or an empty typed message with an already committed attachment.");
-            // If the last message is user, still try to update it. If not, this indicates a more complex state issue.
-            if(historyForPayload[lastMessageIndex].role === 'user') {
-                 historyForPayload[lastMessageIndex].content = contentForLlm;
-            } else {
-                // Fallback: if the last message isn't a user message, or something is unexpected,
-                // we might push a new user message with contentForLlm.
-                // This path should be rare with the current logic.
-                console.warn("Renderer: Fallback - Pushing new user message to historyForPayload as last message was not the expected user message.");
-                historyForPayload.push({role: 'user', content: contentForLlm });
-            }
+            // This should ideally not happen if userMessageForDisplay was just pushed.
+            console.warn("Renderer: Last message in historyForPayload was not a user message. Appending contentForLlm as new user message.");
+            historyForPayload.push({ role: 'user', content: contentForLlm });
         }
-    } else { // Should not happen if we add userMessageForDisplay first
+    } else { 
+         // This case implies currentConversationMessages was empty, which means userMessageForDisplay was the first.
+         // historyForPayload would be [{ role: 'user', content: displayContent }]. We need to update its content.
+         // However, the logic above pushes userMessageForDisplay to currentConversationMessages first,
+         // so historyForPayload should always have at least one message if we reach here.
+         // For safety, if it's somehow empty, create the user message with contentForLlm.
+         console.warn("Renderer: historyForPayload was unexpectedly empty. Creating user message with contentForLlm.");
          historyForPayload.push({role: 'user', content: contentForLlm });
     }
 
@@ -569,7 +686,11 @@ async function handleSendMessage() {
         history: historyForPayload,
     };
 
-    console.log(`Renderer: Sending message. LLM Payload History Length: ${payload.history.length}. Last user content for LLM (first 100 chars): "${contentForLlm.substring(0,100)}..."`);
+    console.log(`Renderer: Sending message. LLM Payload History Length: ${payload.history.length}. Last user content for LLM (type: ${typeof contentForLlm === 'string' ? 'string' : 'array'}, first 100 chars if string): "${typeof contentForLlm === 'string' ? contentForLlm.substring(0,100) : '[Multipart Content]' }..."`);
+    if (Array.isArray(contentForLlm)) {
+        console.log("Renderer: Multi-modal content parts for LLM:", JSON.stringify(contentForLlm, null, 2));
+    }
+
 
     try {
         const assistantOutputResponse = await window.electronAPI.sendChatMessage(payload); // Now returns AssistantOutputContent
@@ -1056,45 +1177,70 @@ async function handleExportChat() {
     console.log(`Renderer: Exporting chat for session ID: ${activeSessionId}`);
     const sessionTitle = allSessionsMetadata.find(s => s.id === activeSessionId)?.title || 'Untitled Chat';
     let markdownContent = `# Chat Session: ${sessionTitle}\n\n`;
+
     if (currentChatActivePersonaId) {
         const activePersona = allPersonas.find(p => p.id === currentChatActivePersonaId);
         if (activePersona) {
-            markdownContent += `## Persona: ${activePersona.name}\n\n**System Prompt:**\n\n${activePersona.prompt.replace(/\n/g, '\n\n')}\n\n---\n\n`;
+            const personaPromptText = (typeof activePersona.prompt === 'string') ? activePersona.prompt : '[Invalid Persona Prompt Format]';
+            markdownContent += `## Persona: ${activePersona.name}\n\n**System Prompt:**\n\n${personaPromptText.replace(/\n/g, '\n\n')}\n\n---\n\n`;
         } else {
             console.warn(`Renderer (Export): Active persona ID ${currentChatActivePersonaId} not found in allPersonas. Not adding to export.`);
         }
     }
+
     currentConversationMessages.forEach(msg => {
+        let messageTextContent = '';
+        if (typeof msg.content === 'string') {
+            messageTextContent = msg.content;
+        } else if (Array.isArray(msg.content)) {
+            // For user messages with images, concatenate text parts and add a placeholder for the image.
+            // For assistant image responses, msg.content is already a string like "[Image]" or a caption.
+            msg.content.forEach(part => {
+                if (part.type === 'text') {
+                    messageTextContent += part.text;
+                } else if (part.type === 'image_url') {
+                    // If we want to include the filename, we'd need to store it with the UserContent parts.
+                    // For now, a generic placeholder.
+                    messageTextContent += (messageTextContent ? '\n' : '') + '[Image Attached]'; 
+                }
+            });
+        } else if (msg.role === 'assistant' && msg.assistantOutput?.type === 'image' && msg.assistantOutput?.text_content) {
+            // This handles the case where assistant message.content is the caption string,
+            // and we want to ensure it's used.
+            messageTextContent = msg.assistantOutput.text_content;
+        }
+
+
         if (msg.role === 'system') {
-            markdownContent += `*System (Chat Internal): ${msg.content.replace(/\n/g, '\n\n')}*\n\n---\n\n`;
+            markdownContent += `*System (Chat Internal): ${messageTextContent.replace(/\n/g, '\n\n')}*\n\n---\n\n`;
             return;
         }
         if (msg.role === 'error') {
-             markdownContent += `**Error:**\n${msg.content}\n\n---\n\n`;
+             markdownContent += `**Error:**\n${messageTextContent.replace(/\n/g, '\n\n')}\n\n---\n\n`;
              return;
         }
+
         markdownContent += `**${msg.role === 'user' ? 'User' : 'Assistant'}**`;
         if (msg.role === 'assistant') {
             let assistantHeader = '';
             if (msg.modelUsed) {
                 assistantHeader += ` (Model: ${msg.modelUsed}`;
             }
-            if (currentChatActivePersonaId) {
-                const persona = allPersonas.find(p => p.id === currentChatActivePersonaId);
-                if (persona) {
-                    assistantHeader += assistantHeader ? `, Persona: ${persona.name}` : ` (Persona: ${persona.name}`;
-                }
+            if (msg.personaUsedName) { // Use personaUsedName from the message
+                 assistantHeader += assistantHeader ? `, Persona: ${msg.personaUsedName}` : ` (Persona: ${msg.personaUsedName}`;
             }
             if (assistantHeader) {
                 assistantHeader += ')';
             }
             markdownContent += assistantHeader;
         }
-        markdownContent += `:\n\n${msg.content.replace(/\n/g, '\n\n')}\n\n---\n\n`;
+        markdownContent += `:\n\n${messageTextContent.replace(/\n/g, '\n\n')}\n\n---\n\n`;
     });
+
     const activeSessionTitle = allSessionsMetadata.find(s => s.id === activeSessionId)?.title || 'chat-export';
     const sanitizedTitle = activeSessionTitle.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
     const suggestedFilename = `${sanitizedTitle}.md`;
+
     try {
         const result = await window.electronAPI.exportChatToFile(markdownContent, suggestedFilename);
         if (result.success && result.filePath) {
@@ -1109,7 +1255,6 @@ async function handleExportChat() {
         showToast(`An unexpected error occurred during export: ${error.message || 'Unknown error'}`, 'error');
     }
 }
-
 if (exportChatButton) {
     exportChatButton.addEventListener('click', handleExportChat);
 }

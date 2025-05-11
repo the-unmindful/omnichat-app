@@ -47,11 +47,11 @@ export async function handleAttachFile() {
         // If a new file is selected, it will overwrite currentSelectedFileInfo and reset commit status.
         const fileInfo = await window.electronAPI.selectFile();
         if (fileInfo) {
-            const allowedTypes = ['.txt', '.html', '.htm', '.md'];
-            const fileExtension = fileInfo.type.toLowerCase();
+            const allowedTypes = ['.txt', '.html', '.htm', '.md', '.png', '.jpg', '.jpeg', '.webp', '.gif'];
+            const fileExtension = fileInfo.type.toLowerCase(); // fileInfo.type is already the extension like '.txt'
             
             if (!allowedTypes.includes(fileExtension)) {
-                showToast(`Unsupported file type: ${fileInfo.name}. Please select a TXT, HTML, or MD file.`, "error");
+                showToast(`Unsupported file type: ${fileInfo.name}. Please select a TXT, HTML, MD, PNG, JPG, WEBP, or GIF file.`, "error");
                 return;
             }
             currentSelectedFileInfo = fileInfo;

@@ -111,7 +111,7 @@ export interface ElectronAPI {
 
     // --- NEW Attachment Handling ---
     selectFile: () => Promise<{ originalPath: string; name: string; type: string; size: number } | null>;
-    extractTextFromFile: (originalPath: string, fileType: string) => Promise<{ extractedText: string; error?: string }>;
+    extractTextFromFile: (originalPath: string, fileType: string) => Promise<{ extractedText?: string; base64ImageData?: string; imageMimeType?: string; error?: string }>;
 }
 
 // Define ChatSessionMetadata here for preload's use, mirroring renderer.ts
