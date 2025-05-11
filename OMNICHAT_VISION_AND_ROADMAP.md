@@ -1,78 +1,160 @@
-**Part 1: The Revised Vision Statement & Core Principles**
+**Part 1: The Revised Vision Statement & Core Principles** of your OmniChat document, breaking it down step-by-step to capture the detail from our discussion.
 
 ---
 
-## OmniChat: The Unified Desktop Client for Bi-Directional Multi-Modal AI Interaction
+## Part 1: The Revised Vision Statement & Core Principles for OmniChat
+
+This revision reflects OmniChat's ambition to be a premier, desktop-native AI interaction tool, emphasizing its potential for deep multi-modality, customization, power, and a superior user experience, especially when considering the evolving AI landscape and existing alternatives.
+
+---
+
+### **The Revised Vision Statement**
 
 **Vision Statement:**
 
-To establish OmniChat as an intuitive, powerful, and elegant desktop application that serves as a **universal client for seamless, bi-directional interaction with a diverse array of local and cloud-based Artificial Intelligence models.** OmniChat will empower users to effortlessly send various inputs—including text, images, audio, and video clips—to specialized AI endpoints (such as those hosted via LM Studio, custom servers, or remote APIs). Crucially, it will enable users to receive, manage, interact with, and display the corresponding multi-modal outputs from these AIs, encompassing text, generated images, synthesized audio, video analysis, and other emerging AI-generated content.
+To forge OmniChat into the **quintessential desktop-native AI interaction hub,** renowned for its elegance, intuitive power, and profound customizability. OmniChat will empower users to seamlessly orchestrate **bi-directional, multi-modal dialogues** with a diverse spectrum of local and cloud-based Artificial Intelligence systems—effortlessly exchanging text, images, audio, video, and documents—and to dynamically receive, visualize, interact with, and leverage the rich, AI-generated responses within a single, unified interface.
 
-OmniChat will achieve this by centralizing API key and endpoint management, providing robust context and session organization, fostering a highly extensible platform for both personal and power-user needs, and prioritizing a clean, aesthetically pleasing, and supremely usable "Paper Modern" interface. It aims to be the go-to application for anyone looking to harness the full spectrum of AI capabilities in a single, consolidated environment.
-
-**Core Pillars of the Vision:**
-
-1.  **Universal AI Endpoint Connectivity:**
-    *   Connect to a wide range of AI models: LLMs, VLMs, Image Generation Models, Speech-to-Text (STT), Text-to-Speech (TTS), future audio/video analysis models, and other specialized AI systems.
-    *   Support for various hosting methods: Commercial APIs (OpenAI, Anthropic, Gemini, etc.), semi-local solutions (OpenRouter, LM Studio), and potentially direct local model execution.
-2.  **Bi-Directional Multi-Modal Interaction:**
-    *   **Input:** Users can send text, images (for analysis or as prompt components), audio clips (for transcription or commands), and video snippets (for analysis).
-    *   **Output:** The AI can respond with text, generated images, synthesized audio, links to generated/analyzed video, structured data, or other forms of AI-generated content. OmniChat will render these natively or provide appropriate interaction mechanisms.
-3.  **Intelligent Context & Session Management:**
-    *   Sophisticated conversation history management, including intelligent summarization for long contexts.
-    *   Seamless persistence and organization of chat sessions, even those containing diverse media types.
-    *   User-defined personas and system prompts applicable across different models.
-4.  **Extensibility & Future-Proofing:**
-    *   Modular architecture to easily integrate new AI providers, model types, and content handlers.
-    *   Potential for a plugin system to allow community or user contributions.
-    *   Adaptability to the rapidly evolving AI landscape.
-5.  **Superior User Experience & Customization:**
-    *   Intuitive, "Paper Modern" design focusing on clarity, ease of use, and aesthetic appeal.
-    *   Non-blocking, responsive UI with clear feedback.
-    *   Customizable interface elements and workflows where appropriate.
-6.  **Privacy & Local Control:**
-    *   Prioritize local data storage (`electron-store`) for user-generated content and configurations.
-    *   Empower users with control over their data and API key security within their trusted device environment.
-
-**Guiding Principles (Reiteration & Refinement):**
-
-*   **User-Centricity & Intuition:** The user's workflow and ease of interaction are paramount.
-*   **Power & Flexibility:** Enable complex interactions without overwhelming the user.
-*   **Elegance & Simplicity:** Achieve sophisticated functionality through a clean and uncluttered interface.
-*   **Performance & Reliability:** Ensure a stable, responsive application.
-*   **Modularity & Maintainability:** Facilitate ongoing development and adaptation.
-
----
-**Part 2: The Detailed Roadmap - Foundational Versions**
-
-This roadmap is designed to incrementally build towards the full vision, ensuring each version delivers tangible value and builds upon a stable foundation.
+As the **most potent and future-ready open platform** of its kind, OmniChat will deliver this experience through meticulous "Paper Modern" design, superior local data sovereignty, robust context management, and a highly extensible architecture built for evolution. It is destined to be the definitive application for individuals and power-users seeking to consolidate, personalize, and master the evolving landscape of Artificial Intelligence on their terms.
 
 ---
 
-## OmniChat Detailed Roadmap
+### **Core Pillars of the Vision (Revised)**
+
+These pillars define the foundational strengths and strategic focuses that will enable OmniChat to achieve its ambitious vision. They are refined to emphasize desktop-native advantages, deep multi-modality, extensibility for power users, and a commitment to a superior, privacy-centric experience.
+
+1.  **Desktop-Native Universal AI Gateway:**
+    *   **Core Idea:** Establish OmniChat as the premier, secure, and high-performance desktop gateway to the AI universe.
+    *   **Details:**
+        *   **Seamless Connectivity:** Connect to an expanding array of AI models: Large Language Models (LLMs), Vision Language Models (VLMs), Image Generation, Speech-to-Text (STT), Text-to-Speech (TTS), advanced audio/video analysis systems, and emerging specialized AIs.
+        *   **Versatile Endpoint Management:** Natively support diverse hosting methods:
+            *   Commercial Cloud APIs (OpenAI, Anthropic, Google Gemini, Mistral AI, etc.) with robust and secure API key management.
+            *   Proxied Local Model Servers (LM Studio, Ollama, Oobabooga, etc.), offering easy integration with existing user setups.
+            *   *Future Exploration:* Investigate pathways for direct, optimized local model execution (e.g., via llama.cpp, ONNX Runtime, WebGPU inference) to maximize performance and offline capabilities for power-users, leveraging desktop hardware advantages.
+        *   **Centralized Control:** Provide a single, coherent interface to manage all AI interactions, configurations, and resources directly from the user's trusted desktop environment.
+
+2.  **Profound Bi-Directional Multi-Modal Fluency:**
+    *   **Core Idea:** Enable truly fluid and rich interaction where users and AIs can converse and exchange information using a full spectrum of media types as first-class citizens.
+    *   **Details:**
+        *   **Effortless Multi-Modal Input:** Users can intuitively compose prompts and provide context by combining:
+            *   **Text:** Rich text input with formatting capabilities.
+            *   **Images:** Attach images for analysis, as prompt components, or for visual Q&A.
+            *   **Audio:** Provide audio clips for transcription, voice commands, or direct audio analysis by capable models.
+            *   **Video:** Submit video snippets for content analysis, summarization, or frame extraction.
+            *   **Documents:** Attach various document types (PDF, DOCX, TXT, MD, PPTX) for content extraction and contextual understanding.
+        *   **Rich & Interactive Multi-Modal Output:** OmniChat will intelligently render and facilitate interaction with diverse AI responses:
+            *   **Formatted Text:** Clear, readable text with Markdown support, including code blocks, lists, and tables.
+            *   **Generated Images:** Inline display of AI-generated images with options for viewing, saving, and copying.
+            *   **Synthesized Audio:** Integrated audio players for TTS output, with playback controls and download options.
+            *   **Video Information & Links:** Display of video metadata, thumbnails, and embedded players or links for AI-referenced video content.
+            *   **Structured Data:** Future support for rendering and interacting with structured data outputs (e.g., JSON, tables) from AIs.
+
+3.  **Intelligent & Private Contextual Continuity:**
+    *   **Core Idea:** Maintain deep conversational context intelligently and privately, empowering nuanced and extended interactions across sessions and models.
+    *   **Details:**
+        *   **Robust Session Management:** Sophisticated organization and persistence of chat sessions, including those containing diverse media types, all stored locally for user privacy and control.
+        *   **Smart Context Handling:** Advanced conversation history management, including configurable intelligent summarization techniques to manage token limits for long dialogues without losing critical information.
+        *   **User-Defined Personas & System Prompts:** Easily create, manage, and apply custom system prompts and personas across different models and chat sessions, ensuring consistent AI behavior.
+        *   **Local Data Sovereignty:** All chat history, user preferences, and configurations are stored locally by default (`electron-store` or future advanced local databases), giving users complete ownership and control over their interaction data.
+        *   *Future Exploration:* Integrated Retrieval Augmented Generation (RAG) capabilities, allowing users to build and query local knowledge bases from their documents for highly contextualized AI interactions.
+
+4.  **Radical Extensibility & Future-Proof Architecture:**
+    *   **Core Idea:** Engineer OmniChat as an open, modular, and highly adaptable platform that can evolve with the rapidly changing AI landscape and be tailored by the community.
+    *   **Details:**
+        *   **Modular Core Design:** Built from the ground up with a clean, service-oriented architecture in the main process and a component-based UI, facilitating easier maintenance, updates, and feature additions.
+        *   **Powerful Plugin Ecosystem (Future Goal):** Develop a comprehensive plugin system allowing users and developers to extend OmniChat's capabilities in key areas:
+            *   **AI Providers & Models:** Easily add support for new or niche AI APIs and local model interfaces.
+            *   **Content Handlers & Extractors:** Integrate custom parsers for new file types or data sources.
+            *   **Custom Output Renderers:** Allow plugins to define how unique AI-generated content types are displayed.
+            *   **Workflows & Agentic Tools:** Enable the creation of custom multi-step AI tasks or integrations.
+        *   **Adaptability by Design:** Proactively design interfaces and systems to anticipate and accommodate new AI modalities, interaction patterns, and technological advancements.
+
+5.  **Exceptional "Paper Modern" User Experience & Deep Customization:**
+    *   **Core Idea:** Deliver an unparalleled user experience that is visually stunning, intuitively functional, highly performant, and deeply personalizable, setting a new standard for desktop AI clients.
+    *   **Details:**
+        *   **Signature "Paper Modern" Aesthetic:** A meticulously crafted interface prioritizing clarity, elegance, readability, and ease of use, inspired by the best of modern design principles.
+        *   **Desktop-Optimized Performance:** Ensure a consistently responsive, non-blocking UI with clear feedback mechanisms, leveraging the capabilities of a native desktop application.
+        *   **Intuitive Workflows:** Design all interactions to be natural and efficient, minimizing friction for both common tasks and advanced operations.
+        *   **Profound Customization:** Beyond UI theming (e.g., light/dark modes, accent colors), empower users to tailor:
+            *   Keyboard shortcuts and workflows.
+            *   Default behaviors and model preferences.
+            *   Layout and visibility of UI elements where appropriate.
+        *   **Accessibility:** Strive to build an application that is usable by a wide range of users, considering accessibility best practices.
+
+6.  **Unyielding Commitment to Privacy & User Empowerment:**
+    *   **Core Idea:** Place user privacy, data control, and security at the forefront of OmniChat's design and operation, especially given its desktop-native nature.
+    *   **Details:**
+        *   **Local-First Data Storage:** Reinforce that user-generated content, chat histories, API keys (with best-practice local protection), and configurations are stored on the user's device by default.
+        *   **Transparent Data Handling:** Clearly communicate how data is used, especially when interacting with third-party AI APIs.
+        *   **User-Managed Keys & Endpoints:** Users maintain full control over their API keys and endpoint configurations, with no intermediary servers (for core functionality) compromising this control.
+        *   **Open Source Transparency (Future Goal):** Commit to making OmniChat open-source to foster trust, enable community audit, and empower users to understand and modify the software.
+
+---
+
+### **Guiding Principles (Reiteration & Refinement)**
+
+These principles serve as the ethical and practical compass for all design and development decisions within OmniChat, ensuring alignment with the core vision. They are refined to reflect the ambition and specific differentiators discussed.
+
+*   **User-Obsessed & Intuitive by Design:**
+    *   *The user's journey, clarity of interaction, and effortless task completion are the ultimate metrics of success.* Every feature and design choice must demonstrably enhance usability and reduce cognitive load, making sophisticated AI power feel natural and accessible.
+
+*   **Potent Functionality, Gracefully Delivered:**
+    *   *Enable complex, powerful multi-modal AI interactions without overwhelming the user.* Strive for a high ceiling of capability, allowing power-users to achieve advanced workflows, while maintaining a low floor of entry for everyday tasks through elegant abstraction and progressive disclosure.
+
+*   **Elegance in Simplicity & Purpose:**
+    *   *Achieve sophisticated functionality through a meticulously clean, uncluttered, and aesthetically delightful interface.* "Paper Modern" is not just a style but a philosophy of purposeful design, where every element serves a clear function and contributes to an overall sense of calm and focus.
+
+*   **Uncompromising Performance & Desktop Reliability:**
+    *   *Ensure a stable, responsive, and resource-efficient application that feels native to the desktop environment.* Prioritize non-blocking operations, optimized rendering, and robust error handling to deliver a consistently smooth and trustworthy experience.
+
+*   **Modular Agility & Future-Proof Craftsmanship:**
+    *   *Build for the long term with a highly modular, maintainable, and adaptable codebase.* Facilitate ongoing development, easy integration of new AI technologies, and the future growth of a vibrant plugin ecosystem. This underpins OmniChat's ability to remain "future-ready."
+
+*   **Privacy as a Foundational Right:**
+    *   *Champion user data sovereignty and transparency in all aspects of the application.* Design features and workflows with a local-first mindset, empowering users with explicit control over their data and AI interactions within their trusted device environment.
+
+*   **Openness & Community Collaboration (Aspirational Goal):**
+    *   *Strive towards an open-source model to foster transparency, community contribution, and shared innovation.* Position OmniChat to benefit from and give back to the broader open-source AI community, enhancing its reach and resilience.
+
+
+---
+
+## Part 2: The Detailed Roadmap - Foundational Versions (Revised)
+
+This roadmap is strategically designed to incrementally build towards the full vision of OmniChat as a premier desktop-native AI interaction hub. Each version delivers tangible value, progressively enhances multi-modal capabilities, and lays the groundwork for future extensibility and power-user features, always guided by the "Paper Modern" design philosophy and principles of user empowerment.
+
+---
 
 ### **Pre-Roadmap: Current State (as per `documentation.md` v1.4)**
 
 *   **Features:** Multi-LLM text chat, API key/enabled model/persona management, multi-session support with local persistence, basic Markdown rendering, toast notifications, chat export/copy, basic chat search, text-file attachments for context.
 *   **Architecture:** Electron, vanilla TS/HTML/CSS, `electron-store`, modular settings UI.
-*   **Key Limitation:** Uni-modal output (text-only from AI). Attachments are for *input context* extraction only.
+*   **Key Limitation:** Uni-modal output (text-only from AI). Attachments are for *input context* extraction only. The UI, while functional, does not yet fully embody the "Paper Modern" elegance and lacks the component-based structure needed for rich multi-modal rendering.
 
 ---
 
-### **Version 1.5: Laying the Multi-Modal Output Groundwork**
+### **Version 1.5: The Multi-Modal Leap & UI Foundation**
 
-*   **Objective:** Introduce the capability for OmniChat to receive and display a non-text output (specifically, an image) from an AI, and refine existing text-based context features. This version is critical for breaking the text-only output paradigm.
-*   **Theme:** "Seeing is Believing" – First visual output from an AI.
+*   **Objective:** Introduce true multi-modal output by enabling AI-generated image display. Critically, **begin the strategic adoption of a modern UI framework (e.g., Svelte or Vue) for the chat message rendering component** to establish the foundation for future "Paper Modern" elegance and complex multi-modal interactions. Refine existing text-based context features.
+*   **Theme:** "Visual Awakening & Interface Reimagined" – First visual output from AI, first steps towards a truly modern UI.
 
 *   **Meticulous Steps:**
 
-    1.  **Conceptual & Architectural Adjustments (Core):**
-        *   **1.1. Redefine `ChatMessage` Interface:**
-            *   **Action:** Modify `ChatMessage` to support distinct structures for `userInput` and `assistantOutput`. The `assistantOutput` will need a `type` discriminator (e.g., `'text'`, `'image'`) and corresponding data fields (e.g., `text_content`, `image_url`).
+    1.  **Strategic UI Framework Adoption (Core - Renderer Process):**
+        *   **1.1. Decision & Initial Setup:**
+            *   **Action:** Finalize the choice of UI framework (e.g., Svelte, Vue, or potentially Lit for strong Web Component alignment with "Paper Modern" principles).
+            *   **Details:** Integrate the chosen framework into the Electron build process (Electron Forge with Webpack). Set up basic component structure.
+        *   **1.2. Rewrite Chat Message Rendering:**
+            *   **Action:** Re-implement the `addMessageToChat` functionality (and related message display logic) using the chosen UI framework's component-based architecture.
+            *   **Details:** Create a `ChatMessageComponent` (or similar) that can dynamically render different message structures. Initially, it will handle existing text messages.
+            *   **Focus:** Achieve a clean, maintainable, and stylable component that will be the basis for all future message types. This is the primary focus over adding many new features in this release.
+
+    2.  **Architectural Adjustments for Multi-Modal Output (Core):**
+        *   **2.1. Redefine `ChatMessage` Interface (as originally planned):**
+            *   **Action:** Modify `ChatMessage` to support `assistantOutput` with `type` discriminator (`'text'`, `'image'`, `'error'`) and corresponding data fields (`text_content`, `image_url`, `error_message`).
             *   **Details:**
                 ```typescript
                 interface AssistantOutputContent {
-                    type: 'text' | 'image' | 'error'; // Start with these
+                    type: 'text' | 'image' | 'error';
                     text_content?: string;
                     image_url?: string; // URL to the generated image
                     error_message?: string;
@@ -80,436 +162,387 @@ This roadmap is designed to incrementally build towards the full vision, ensurin
 
                 interface ChatMessage {
                     // ... existing fields like id, role, timestamp
-                    userInputRaw?: string; // Store the raw user input string
-                    // userInputProcessed?: any; // Future: For structured multi-modal user input
+                    userInputRaw?: string;
                     assistantOutput?: AssistantOutputContent;
                     modelUsed?: string;
                     // ... other metadata
                 }
                 ```
-            *   **Impact:** `electron-store` schema update. Consider simple migration for existing text-only messages (map `old_content` to `assistantOutput: { type: 'text', text_content: old_content }`).
-        *   **1.2. Enhance `EnabledModelEntry` Interface:**
-            *   **Action:** Add `expectedOutputModalities: Array<'text' | 'image'>` (or similar) to `EnabledModelEntry`.
-            *   **Details:** This tells OmniChat what kind of response to expect and how to parse it. Default to `['text']` for existing models.
-            *   **UI:** Update the "Enabled Models" settings UI to allow specifying this (initially, could be a hidden/dev-only field or a simple checkbox "Generates Images?").
-        *   **1.3. Basic Image Renderer in `addMessageToChat`:**
-            *   **Action:** Modify `renderer.ts -> addMessageToChat` to check `message.assistantOutput.type`.
-            *   **Details:** If `type === 'image'`, create an `<img>` element and set its `src` to `message.assistantOutput.image_url`. Add basic styling for the image.
-            *   **Error Handling:** If `image_url` is missing or image fails to load, display a placeholder or error.
+            *   **Impact:** `electron-store` schema update and migration logic.
+        *   **2.2. Enhance `EnabledModelEntry` Interface (as originally planned):**
+            *   **Action:** Add `expectedOutputModalities: Array<'text' | 'image'>` to `EnabledModelEntry`.
+            *   **UI:** Update settings UI (this can still be vanilla JS for now or also be a target for early framework adoption if time permits).
 
-    2.  **Integrate a Test Image Generation Model:**
-        *   **2.1. Select Test Provider/Model:**
-            *   **Action:** Choose a simple, readily available text-to-image API.
-                *   Option A: OpenAI DALL-E (if API key available).
-                *   Option B: A public Stable Diffusion API endpoint (e.g., Replicate, or others with free tiers/simple auth).
-                *   Option C (Ideal for local dev): If LM Studio or similar can expose a Stable Diffusion model via an OpenAI-compatible API that returns an image URL or base64, use that.
-        *   **2.2. Implement Provider-Specific Logic (`index.ts`):**
-            *   **Action:** Create a new API handler function (e.g., `handleOpenAiImageGenerationRequest` or `handleStableDiffusionRequest`).
-            *   **Details:** This function will:
-                *   Take the user's text prompt.
-                *   Make the API call to the image generation endpoint.
-                *   Parse the response to extract the image URL (or base64 data, though URL is simpler for V1.5).
-                *   Return an object conforming to `AssistantOutputContent { type: 'image', image_url: '...' }`.
-        *   **2.3. Update `sendChatMessage` IPC Handler (`index.ts`):**
-            *   **Action:** Modify `sendChatMessage` to:
-                *   Check the `expectedOutputModalities` of the selected `EnabledModelEntry`.
-                *   If an image-generating model is selected, route the request to the new provider-specific image generation handler.
-        *   **2.4. Configure Test "Enabled Model" in UI:**
-            *   **Action:** Manually (or guide user to) add an "Enabled Model" entry for the test image generation model, correctly setting its provider, model ID, API key, and the new `expectedOutputModalities` field.
+    3.  **Integrate Image Generation & Display (Leveraging New UI Component):**
+        *   **3.1. Basic Image Rendering in `ChatMessageComponent`:**
+            *   **Action:** Extend the new `ChatMessageComponent` to render an image if `assistantOutput.type === 'image'`.
+            *   **Details:** Use an `<img>` tag, apply basic styling consistent with "Paper Modern" (e.g., rounded corners, subtle shadows, appropriate sizing).
+            *   **Error Handling:** Display placeholders or error messages gracefully within the component.
+        *   **3.2. Select Test Image Generation Provider & Implement Handler (as originally planned):**
+            *   **Action:** Choose a provider (OpenAI DALL-E, Stable Diffusion API, LM Studio exposing an image model). Implement the main process API handler.
+        *   **3.3. Update `sendChatMessage` IPC Handler (as originally planned):**
+            *   **Action:** Route to the image generation handler based on `expectedOutputModalities`.
+        *   **3.4. Configure Test "Enabled Model" in UI (as originally planned).**
 
-    3.  **UI/UX for Image Output (Basic):**
-        *   **3.1. Display:** Ensure generated images are displayed within the chat flow.
-        *   **3.2. Loading State:** While the image is being generated/fetched, display a "Generating image..." placeholder in the message bubble (similar to "..." for text).
-        *   **3.3. Context Menu (Optional for 1.5, good quick win):** Right-click on image -> "Copy Image", "Save Image As...". This would require IPC calls to main for save dialog.
+    4.  **UI/UX for Image Output (Enhanced by Framework):**
+        *   **4.1. Display:** Ensure images are elegantly integrated into the chat flow via the `ChatMessageComponent`.
+        *   **4.2. Loading State:** The `ChatMessageComponent` should manage its own loading state for the image, displaying a "Paper Modern" styled placeholder/spinner.
+        *   **4.3. Basic Interaction (Quick Win):** Implement "Copy Image URL" and "Open Image in New Tab/Window" context menu options on the image, managed within the component.
 
-    4.  **Refine Existing Text Features (from original `OMNICHAT_VISION_AND_ROADMAP.md` V1.5):**
-        *   **4.1. Attachment - Text & HTML Files for Context:**
-            *   **Action:** Implement the already planned feature for attaching TXT/HTML files to provide *textual context* to LLMs (where the LLM's output is still text).
-            *   **Details:** Follow original plan: `selectFile` IPC, `extractTextFromFile` IPC, prepend content to user prompt. User's message `userInputRaw` would contain the typed text, and the combined prompt goes to the LLM.
-        *   **4.2. Chat Summarization - Core Logic & Configuration (Basic):**
-            *   **Action:** Implement the foundational logic for chat summarization.
-            *   **Details:** Settings UI for enable/disable, token threshold, target token count. `gpt-tokenizer`. Main process summarization logic (`getSummarizedHistory` IPC). Renderer calls this, updates UI with summarized history.
-            *   **Focus:** The goal is to reduce token count for *text-based LLMs*.
+    5.  **Refine Existing Text Features (as originally planned):**
+        *   **5.1. Attachment - Text & HTML Files for Context:** Implement as planned.
+        *   **5.2. Chat Summarization - Core Logic & Configuration (Basic):** Implement as planned.
 
-    5.  **Testing & Documentation:**
-        *   **5.1. Thorough Testing:** Test image generation with various prompts. Test text attachment context. Test summarization.
-        *   **5.2. Update Internal Documentation:** Reflect architectural changes (`ChatMessage`, `EnabledModelEntry`), new API handlers.
+    6.  **Design System Foundation ("Paper Modern" - Initial Steps):**
+        *   **Action:** Define basic design tokens (colors, typography, spacing) as CSS custom properties.
+        *   **Details:** Apply these tokens to the new `ChatMessageComponent` and start gradually applying them to other UI areas to ensure consistency. This is the beginning of the "Paper Modern" visual language.
+
+    7.  **Testing & Documentation:**
+        *   **7.1. Thorough Testing:** Test new UI components, image generation, text features. Test across platforms.
+        *   **7.2. Update Internal Documentation:** Document new `ChatMessageComponent` structure, UI framework integration, design token usage.
 
 *   **Key Outcomes for V1.5:**
-    *   OmniChat can now display AI-generated images.
+    *   **Crucially, OmniChat's chat rendering is now powered by a modern UI framework.**
+    *   OmniChat can display AI-generated images within an elegant component.
     *   Core architecture supports multi-modal AI outputs.
-    *   Existing text-based features are enhanced (attachments, basic summarization).
-    *   A significant step towards the broader vision is achieved.
+    *   The "Paper Modern" design system foundation is initiated.
+    *   A major technical step towards achieving the full vision is complete, setting the stage for accelerated UI development.
+
+
 
 ---
 
-### **Version 2.0: Multi-Modal Input (Images for VLMs) & Enhanced Output Capabilities**
+### **Version 2.0: True Bi-Directional Vision & Auditory Introduction**
 
-*   **Objective:** Enable users to send images *to* Vision Language Models (VLMs) for analysis, and improve the handling and interaction with both image and potentially audio outputs.
-*   **Theme:** "Two-Way Vision" – Sending and receiving visual information.
+*   **Objective:** Enable users to send images *to* Vision Language Models (VLMs) for analysis, significantly enhance the interaction with and rendering of image outputs, and introduce basic audio output (Text-to-Speech). Leverage the UI framework for richer, more interactive multi-modal components.
+*   **Theme:** "Seeing, Speaking, Interacting" – OmniChat becomes a true two-way visual and initial auditory communication tool.
 
 *   **Meticulous Steps:**
 
-    1.  **Image Input for Vision Language Models (VLMs):**
-        *   **1.1. Enhance `ChatMessage` for User Input:**
-            *   **Action:** Define a structure for `userInput` within `ChatMessage` to handle multi-modal inputs.
-            *   **Details:**
-                ```typescript
-                interface UserInputAttachment {
-                    type: 'image' | 'document'; // Start with image
-                    fileName: string;
-                    mimeType: string;
-                    base64Data?: string; // For sending image data directly
-                    // extractedText?: string; // For documents (already in V1.5 logic)
-                }
-
-                interface UserInputContent {
-                    text?: string;
-                    attachments?: UserInputAttachment[];
-                }
-
-                interface ChatMessage {
-                    // ... id, role, timestamp
-                    userInput?: UserInputContent; // New structure
-                    assistantOutput?: AssistantOutputContent;
-                    // ...
-                }
-                ```
-        *   **1.2. UI for Attaching Images for VLM Input:**
-            *   **Action:** Enhance the "Attach File" functionality.
+    1.  **Multi-Modal User Input - Images for VLMs (Leveraging UI Framework):**
+        *   **1.1. Enhance `ChatMessage` for User Input (as originally planned):**
+            *   **Action:** Define `UserInputContent` with `text` and `attachments: UserInputAttachment[]` (where `UserInputAttachment` can be `type: 'image'`, `fileName`, `mimeType`, `base64Data`).
+        *   **1.2. Rich Image Attachment UI in Input Area (Framework-Powered):**
+            *   **Action:** Develop a new UI component (e.g., `ChatInputAreaComponent`) using the chosen framework to handle text input and file attachments.
             *   **Details:**
                 *   Allow selecting common image types (PNG, JPG, WEBP).
-                *   Display a preview of the attached image in the input area.
-                *   Allow multiple image attachments if the target VLM supports it (e.g., GPT-4V).
-            *   **State Management:** `attachment-handler.ts` needs to manage image file(s) and their base64 representations.
-        *   **1.3. `EnabledModelEntry` for VLMs:**
-            *   **Action:** Add `acceptedInputModalities: Array<'text' | 'image'>` (or similar) to `EnabledModelEntry`.
-            *   **UI:** Update settings to configure this for VLM models (e.g., GPT-4V, Claude 3 Vision).
-        *   **1.4. Main Process Logic for VLM Requests (`index.ts`):**
-            *   **Action:** Adapt `sendChatMessage` and provider-specific handlers (e.g., for OpenAI, Anthropic).
-            *   **Details:**
-                *   If `acceptedInputModalities` includes 'image', and user has attached images:
-                    *   Format the payload according to the VLM's API requirements (e.g., OpenAI's message content array with text and image_url parts, Anthropic's similar structure).
-                    *   Transmit image data (usually as base64 strings or URLs if pre-uploaded).
-                *   The VLM's response is typically text, so `assistantOutput` will be `{ type: 'text', text_content: '...' }`.
-        *   **1.5. Renderer Update for User's Multi-Modal Input Display:**
-            *   **Action:** When displaying the user's own message, if it contained images, render those images alongside their text.
+                *   Display interactive image previews (thumbnails with remove buttons) directly within the input area before sending. This should be visually appealing and consistent with "Paper Modern".
+                *   Support for attaching multiple images if the target VLM supports it (e.g., GPT-4V, Claude 3 Vision).
+            *   **State Management:** The `ChatInputAreaComponent` will manage its local state for attachments.
+        *   **1.3. `EnabledModelEntry` for VLMs (as originally planned):**
+            *   **Action:** Add `acceptedInputModalities: Array<'text' | 'image'>` to `EnabledModelEntry`. Update settings UI.
+        *   **1.4. Main Process Logic for VLM Requests (`index.ts` - as originally planned):**
+            *   **Action:** Adapt `sendChatMessage` and provider-specific handlers for VLMs, formatting payloads with image data (base64 or URLs).
+        *   **1.5. Display User's Multi-Modal Input in `ChatMessageComponent`:**
+            *   **Action:** The `ChatMessageComponent` (for user's own messages) must now be able to render the text *and* any attached image previews that were sent.
 
-    2.  **Enhanced Image Output Capabilities:**
-        *   **2.1. Support Base64 Image Output:**
-            *   **Action:** Some image generation APIs might return base64 encoded image data directly instead of a URL.
-            *   **Details:** Modify `AssistantOutputContent` for `type: 'image'` to also accept `base64Data?: string`. The renderer will use this for the `<img>` src if `image_url` is not present.
-        *   **2.2. Improved Image Interaction in Chat:**
-            *   **Action:** Enhance UI for displayed generated images.
+    2.  **Enhanced Image Output Capabilities (Framework-Powered `ChatMessageComponent`):**
+        *   **2.1. Support Base64 Image Output (as originally planned):**
+            *   **Action:** Modify `AssistantOutputContent` and `ChatMessageComponent` to handle `base64Data` for images.
+        *   **2.2. Advanced Image Interaction in Chat:**
+            *   **Action:** Enhance the image rendering part of `ChatMessageComponent`.
             *   **Details:**
-                *   Click to view full-size (modal or new window).
-                *   More robust "Copy Image" and "Save Image As..." (ensure cross-platform compatibility).
-                *   Display image metadata if available (e.g., dimensions, generation seed if API provides it).
+                *   **Click-to-Zoom/Lightbox:** Implement a "Paper Modern" styled modal or lightbox for viewing images full-size within the app.
+                *   **Robust "Copy Image" and "Save Image As..."**: Use IPC calls for native save dialogs. Ensure cross-platform reliability.
+                *   **Display Image Metadata (if available):** If the API provides generation seed, dimensions, etc., display this information elegantly (e.g., on hover or in the lightbox view).
+                *   **Image Loading Skeletons/Placeholders:** Use more sophisticated "Paper Modern" skeleton loaders within the component while images are fetching.
 
-    3.  **Introduction to Basic Audio Output (TTS):**
-        *   **3.1. `AssistantOutputContent` for Audio:**
+    3.  **Introduction to Audio Output (Text-to-Speech - TTS):**
+        *   **3.1. `AssistantOutputContent` for Audio (as originally planned):**
             *   **Action:** Add `{ type: 'audio', audio_url?: string, base64Data?: string, autoPlay?: boolean }` to `AssistantOutputContent`.
-        *   **3.2. `EnabledModelEntry` for TTS:**
+        *   **3.2. `EnabledModelEntry` for TTS (as originally planned):**
             *   **Action:** `expectedOutputModalities` can now include `'audio'`.
-        *   **3.3. Integrate a Test Text-to-Speech (TTS) Provider:**
-            *   **Action:** Select a TTS API (e.g., OpenAI TTS, ElevenLabs if simple to integrate, or a browser's built-in `SpeechSynthesis` API for a quick local test initially, though API is better for consistency).
-            *   **Main Process:** Implement handler to call TTS API, get audio URL or base64.
-        *   **3.4. Renderer for Audio Output:**
-            *   **Action:** If `assistantOutput.type === 'audio'`, embed an HTML5 `<audio>` player.
-            *   **Details:** Provide controls (play/pause, volume). Consider `autoPlay` option.
+        *   **3.3. Integrate a Test TTS Provider (as originally planned):**
+            *   **Action:** Select TTS API (e.g., OpenAI TTS, ElevenLabs, or browser's `SpeechSynthesis` for an initial, simpler local test, though an API is preferred for quality/consistency). Implement main process handler.
+        *   **3.4. Audio Player Component (`ChatMessageComponent` Extension or New Sub-Component):**
+            *   **Action:** If `assistantOutput.type === 'audio'`, the `ChatMessageComponent` should render an embedded HTML5 `<audio>` player, styled according to "Paper Modern" principles.
+            *   **Details:** Provide clear play/pause, progress bar, volume control. Consider `autoPlay` option (configurable). Ensure it integrates visually with the message bubble.
 
-    4.  **Refine Summarization (from original roadmap):**
-        *   **4.1. Advanced Summarization LLM Configuration:** Settings UI for dedicated summarization model endpoints (LM Studio, custom OpenAI-compatible).
-        *   **4.2. Smoother UX for Summarization:** Investigate less disruptive UI updates if possible.
+    4.  **Refine Summarization (as originally planned):**
+        *   **4.1. Advanced Summarization LLM Configuration:** Settings UI for dedicated summarization model endpoints.
+        *   **4.2. Smoother UX for Summarization:** Investigate less disruptive UI updates if possible, perhaps using the UI framework's reactivity.
 
-    5.  **Technical Strategy - UI Framework Consideration (as per original roadmap):**
-        *   **Action:** Seriously evaluate if the complexity of rendering multi-modal messages (user inputs with image previews, assistant outputs with images/audio players) in vanilla JS is becoming a bottleneck.
-        *   **Decision Point:** If so, begin planning for incremental adoption of Svelte or Vue for the chat message rendering component.
+    5.  **UI Framework Consolidation & "Paper Modern" Expansion:**
+        *   **Action:** Identify other UI areas that would significantly benefit from being rewritten using the chosen UI framework (e.g., the chat session list, settings modal sections if not already done).
+        *   **Details:** Continue to expand the use of "Paper Modern" design tokens (CSS custom properties) and create reusable styled components for common UI elements (buttons, inputs, modals) to ensure consistency and speed up development.
 
     6.  **Testing & Documentation:**
-        *   **6.1. Test VLM image inputs with different models.**
-        *   **6.2. Test enhanced image outputs.**
-        *   **6.3. Test basic TTS audio output.**
-        *   **6.4. Document new `ChatMessage` structures, VLM/TTS integration points.
+        *   **6.1. Rigorous multi-modal testing:** VLM image inputs, enhanced image outputs, TTS audio output.
+        *   **6.2. Component testing** for the new UI framework components.
+        *   **6.3. Document new `ChatMessage` structures, VLM/TTS integration points, new UI components, and expanded "Paper Modern" design system guidelines.
 
 *   **Key Outcomes for V2.0:**
-    *   Users can send images to VLMs for analysis.
-    *   Image output handling is more robust.
-    *   Basic audio output (TTS) is introduced.
-    *   The application is becoming a true multi-modal interaction tool.
-    *   A decision on UI framework adoption for chat rendering is made or actively planned.
+    *   OmniChat supports bi-directional image-based interaction with VLMs.
+    *   Image output handling is significantly more robust, interactive, and aesthetically pleasing.
+    *   Basic audio output (TTS) is introduced with an integrated player.
+    *   The UI framework adoption is further solidified, with more complex, interactive components demonstrating its value.
+    *   The "Paper Modern" design language is more pervasive across the application.
+    *   OmniChat is now a demonstrably powerful multi-modal interaction tool.
+
+
 
 ---
-**Part 3: The Detailed Roadmap - Advanced Capabilities & Maturity**
 
----
+### **Version 2.5: Deep Document Understanding & Enhanced Audio Dialogue**
 
-### **Version 2.5: Expanding Input Horizons & Robust Content Extraction**
-
-*   **Objective:** Broaden the types of files users can attach for AI context/input (PDFs, DOCX), make content extraction more robust and modular, and enhance audio interaction.
-*   **Theme:** "Deeper Understanding" – Processing more complex document types and refining audio.
+*   **Objective:** Broaden the types of files users can attach for AI context/input (PDFs, DOCX), establish a robust and modular `ContentExtractionService` in the main process, and significantly enhance both audio input (Speech-to-Text) and output (TTS) capabilities.
+*   **Theme:** "Unlocking Knowledge, Amplifying Voice" – OmniChat deeply understands user documents and engages in richer audio conversations.
 
 *   **Meticulous Steps:**
 
-    1.  **PDF Content Extraction for Input Context/Analysis:**
-        *   **1.1. Integrate PDF Parsing Library:**
-            *   **Action:** Add `pdf-parse` (or a similar robust library) to the project dependencies.
-        *   **1.2. Modular Content Extraction Service (Main Process):**
-            *   **Action (Crucial Refactor):** Create a dedicated service/module (e.g., `src/main/services/content-extractor.ts`).
+    1.  **Modular `ContentExtractionService` (Crucial Main Process Refactor):**
+        *   **1.1. Design & Implement Central Service:**
+            *   **Action:** Create a dedicated service module in the main process (e.g., `src/main/services/content-extractor.ts`).
             *   **Details:**
-                *   This service will expose a primary function like:
+                *   Expose a primary function like:
                     ```typescript
                     async function extractFileContents(
                         filePath: string,
                         mimeType: string
                     ): Promise<{
                         textContent?: string;
-                        // Potential future: imagesEmbedded?: string[]; (for RAG on PDFs with images)
+                        // Potential future: imagesEmbedded?: string[] (for RAG on PDFs with images)
+                        // Potential future: structuredData?: any;
                         error?: string;
                     }>
                     ```
-                *   Internally, it will route to the correct parsing logic based on `mimeType` (TXT, HTML, PDF).
-                *   The existing `extractTextFromFile` IPC handler will now call this central service.
-        *   **1.3. PDF Extraction Logic:**
-            *   **Action:** Implement PDF parsing within the `ContentExtractionService` using `pdf-parse`.
-            *   **Output:** Primarily `textContent`.
-        *   **1.4. UI for Attaching PDFs:**
-            *   **Action:** Update the "Attach File" dialog and `attachment-handler.ts` to accept `.pdf` files.
-            *   **Details:** When a PDF is attached, its `textContent` will be extracted and can be:
-                *   Prepended to a text-based LLM prompt (similar to TXT/HTML).
-                *   Sent as the primary textual input to a VLM if the VLM is meant to analyze the document content.
-        *   **1.5. Update `UserInputAttachment`:**
-            *   Ensure `UserInputAttachment.type` can be `'document'` and can hold `extractedText`.
+                *   This service will be responsible for routing to the correct parsing logic based on `mimeType` and managing any necessary external libraries.
+                *   The existing `extractTextFromFile` IPC handler (for TXT/HTML from V1.5) will be refactored to use this central service.
+        *   **1.2. Asynchronous Processing & Feedback:**
+            *   **Action:** Ensure all extraction operations within this service are asynchronous to prevent blocking the main process.
+            *   **IPC:** Implement robust IPC mechanisms for the renderer to initiate extraction and receive progress updates or final results/errors. The UI (e.g., `ChatInputAreaComponent`) should display "Processing [file type]..." feedback.
 
-    2.  **DOCX Content Extraction for Input Context/Analysis:**
-        *   **2.1. Integrate DOCX Parsing Library:**
-            *   **Action:** Add `mammoth.js` (or similar) for `.docx` processing.
-        *   **2.2. DOCX Extraction Logic:**
-            *   **Action:** Implement DOCX parsing within the `ContentExtractionService`.
-            *   **Details:** `mammoth.js` can convert DOCX to plain text or HTML. Plain text is generally safer/simpler for LLM input.
-        *   **2.3. UI for Attaching DOCX:**
-            *   **Action:** Update "Attach File" to accept `.docx` files.
-            *   **Behavior:** Similar to PDFs – extracted text used for LLM/VLM input.
+    2.  **PDF Content Extraction for Input Context/Analysis:**
+        *   **2.1. Integrate PDF Parsing Library (as originally planned):**
+            *   **Action:** Add `pdf-parse` (or a more advanced alternative if RAG features for images in PDFs are considered soon) to the project.
+        *   **2.2. PDF Extraction Logic in `ContentExtractionService`:**
+            *   **Action:** Implement PDF parsing, primarily extracting `textContent`.
+        *   **2.3. UI for Attaching PDFs (Enhance `ChatInputAreaComponent`):**
+            *   **Action:** Update the file attachment UI to accept `.pdf` files.
+            *   **Behavior:** Extracted text is made available for LLM/VLM input, similar to TXT/HTML. The `UserInputAttachment` structure is updated accordingly.
 
-    3.  **Enhanced Audio Input (Transcription - STT):**
-        *   **3.1. `UserInputAttachment` for Audio:**
-            *   **Action:** Ensure `UserInputAttachment` can handle `type: 'audio'`, including `fileName`, `mimeType`, and `base64Data` (or path to file for local processing).
-        *   **3.2. Integrate Speech-to-Text (STT) Capability:**
-            *   **Action:** Choose and integrate an STT solution.
-                *   Option A (Cloud): OpenAI Whisper API. Requires handling API calls.
-                *   Option B (Local, Advanced): Investigate local Whisper models (e.g., via `whisper-node` or a Python bridge if necessary, or if LM Studio can expose Whisper). This is more complex but offers privacy.
-                *   Option C (Simpler, Less Accurate): Browser's `SpeechRecognition` API (if acceptable for initial STT).
-        *   **3.3. Main Process STT Logic:**
-            *   **Action:** If an audio file is attached by the user:
-                *   The `ContentExtractionService` (or a new `AudioProcessingService`) transcribes it.
-                *   The resulting text is added to the `UserInputContent.text` or as a separate text block.
-            *   **IPC:** New IPC call like `transcribeAudioFile(filePath: string)` might be needed.
-        *   **3.4. UI for Attaching Audio Files for Transcription:**
-            *   **Action:** Update "Attach File" to accept common audio formats (MP3, WAV, M4A).
-            *   **Feedback:** Show "Transcribing audio..." state.
-        *   **3.5. `EnabledModelEntry` (Consideration):**
-            *   While STT is a pre-processing step, some models might accept direct audio input in the future. The architecture should be mindful of this. For now, STT output is text.
+    3.  **DOCX Content Extraction for Input Context/Analysis:**
+        *   **3.1. Integrate DOCX Parsing Library (as originally planned):**
+            *   **Action:** Add `mammoth.js` or similar.
+        *   **3.2. DOCX Extraction Logic in `ContentExtractionService`:**
+            *   **Action:** Implement DOCX parsing (preferring plain text output for LLM simplicity).
+        *   **3.3. UI for Attaching DOCX (Enhance `ChatInputAreaComponent`):**
+            *   **Action:** Update file attachment UI to accept `.docx` files.
 
-    4.  **Refined Audio Output (TTS):**
-        *   **4.1. More TTS Provider Options:**
-            *   **Action:** Allow configuration of more TTS providers in settings (e.g., ElevenLabs, other cloud services).
-            *   **Details:** API key management for these new providers.
-        *   **4.2. Audio Player Enhancements:**
+    4.  **Advanced Audio Input (Speech-to-Text - STT):**
+        *   **4.1. `UserInputAttachment` for Audio (as originally planned):**
+            *   **Action:** Ensure `UserInputAttachment` can handle `type: 'audio'`.
+        *   **4.2. Integrate High-Quality STT Capability:**
+            *   **Action:** Choose and integrate a robust STT solution.
+                *   **Option A (Cloud - Preferred for Quality/Ease):** OpenAI Whisper API (or similar high-quality cloud STT). Implement in main process, manage API key if different from LLM keys.
+                *   **Option B (Local - Power User/Privacy Focus, More Complex):** Investigate local Whisper models (e.g., via `whisper-node`, a bundled Python environment with Whisper, or if LM Studio/Ollama expose Whisper API endpoints). This aligns with "Desktop-Native" and "Privacy" pillars but is a heavier lift. *This could be a toggleable option if both are implemented.*
+        *   **4.3. STT Logic in `ContentExtractionService` (or new `AudioProcessingService`):**
+            *   **Action:** Transcribe attached audio files. The resulting text is added to `UserInputContent.text` or becomes a distinct part of the user's input.
+        *   **4.4. UI for Attaching Audio for Transcription (Enhance `ChatInputAreaComponent`):**
+            *   **Action:** Accept common audio formats (MP3, WAV, M4A, OGG).
+            *   **Feedback:** Show "Transcribing audio..." with progress if possible.
+        *   **4.5. Direct Microphone Input for STT (New Feature):**
+            *   **Action:** Add a microphone button to the `ChatInputAreaComponent`.
+            *   **Details:** Use Electron's access to system microphone (`navigator.mediaDevices.getUserMedia`). Stream audio to STT service (if supported) or process upon completion. Provide clear recording indicators and controls.
+
+    5.  **Refined Audio Output (TTS):**
+        *   **5.1. More TTS Provider Options & Configuration:**
+            *   **Action:** Allow configuration of more TTS providers (e.g., ElevenLabs, other cloud services, potentially system-provided voices via Electron).
+            *   **UI:** Update settings for TTS provider selection, API key management, voice selection per provider.
+        *   **5.2. Audio Player Enhancements in `ChatMessageComponent`:**
             *   **Action:** Improve the embedded audio player.
-            *   **Details:** Download button for generated audio, playback speed control (if easy with HTML5 audio).
-        *   **4.3. Streaming TTS (Advanced, Optional for 2.5):**
-            *   **Action:** Investigate if any TTS providers support streaming audio.
-            *   **Details:** This would allow audio to start playing before the entire file is generated, improving perceived responsiveness. Complex to implement.
+            *   **Details:** Download button for generated audio, playback speed control, voice selection indicator if applicable. Ensure "Paper Modern" styling.
+        *   **5.3. Streaming TTS (Advanced, if provider supports):**
+            *   **Action:** Investigate and implement if a chosen TTS provider supports audio streaming.
+            *   **Details:** This would allow audio to start playing much faster, significantly improving perceived responsiveness. Requires more complex handling of audio data streams in the `ChatMessageComponent`.
 
-    5.  **Error Handling & User Feedback:**
-        *   **Action:** Improve error handling for all file extraction and audio processing.
-        *   **Details:** Clear toast notifications for failures (e.g., "Could not parse PDF," "Transcription failed").
-        *   Progress indicators for longer operations like transcription.
+    6.  **Error Handling & User Feedback for Content Processing:**
+        *   **Action:** Implement comprehensive and user-friendly error handling for all file extraction (PDF, DOCX) and audio processing (STT, TTS).
+        *   **Details:** Use clear, non-intrusive "Paper Modern" styled toast notifications for failures. Provide meaningful progress indicators for long operations.
 
-    6.  **Testing & Documentation:**
-        *   **6.1. Test PDF/DOCX extraction with various files (simple, complex, corrupted).**
-        *   **6.2. Test audio transcription with different accents, background noise (if applicable to STT solution).**
-        *   **6.3. Test enhanced TTS features.**
-        *   **6.4. Document the `ContentExtractionService` and new audio processing flows.
+    7.  **Testing & Documentation:**
+        *   **7.1. Test PDF/DOCX extraction with diverse and complex files.**
+        *   **7.2. Test STT (file and microphone) with various accents, noise levels.**
+        *   **7.3. Test enhanced TTS features and multiple providers.**
+        *   **7.4. Document the `ContentExtractionService`, audio processing flows, new UI interactions, and error states.
 
 *   **Key Outcomes for V2.5:**
-    *   OmniChat can ingest and process content from PDFs and DOCX files for AI interaction.
-    *   Robust, modular content extraction is in place.
-    *   Users can attach audio files for transcription (STT).
-    *   TTS audio output capabilities are more refined.
-    *   The application handles a much wider range of user inputs.
+    *   OmniChat can ingest and extract text from PDF and DOCX files, significantly expanding its contextual input capabilities.
+    *   A robust, modular `ContentExtractionService` is central to the main process architecture.
+    *   High-quality Speech-to-Text (STT) is integrated for both file-based and direct microphone input.
+    *   Text-to-Speech (TTS) output is more versatile with multiple provider options and enhanced player controls.
+    *   OmniChat offers a much richer conversational experience, adept at handling complex documents and more natural voice interactions.
+    *   The application further solidifies its position as a powerful "Desktop-Native Universal AI Gateway."
 
 ---
 
-### **Version 3.0: The "One-Stop" Multi-Modal Hub & Extensibility**
+### **Version 3.0: The Universal Multi-Modal AI Hub & Extensibility Foundation**
 
-*   **Objective:** Realize the full vision of a comprehensive multi-modal AI client by adding basic video processing, further enhancing audio/image capabilities, and exploring a plugin architecture for future growth.
-*   **Theme:** "Universal AI Access" – OmniChat as the central hub for diverse AI tasks.
+*   **Objective:** Broaden multi-modal capabilities to include basic video input processing and output referencing, introduce support for another common document type (PPTX), and critically, **design and implement the foundational elements of a plugin architecture.** This version focuses on achieving a breadth of AI interaction types and preparing OmniChat for community-driven expansion and future innovations.
+*   **Theme:** "Omni-Access, Omni-Extend" – OmniChat becomes the central, adaptable hub for a vast range of AI tasks and future growth.
 
 *   **Meticulous Steps:**
 
-    1.  **Basic Video Input Processing (Analysis/Transcription Context):**
-        *   **1.1. `UserInputAttachment` for Video:**
+    1.  **Basic Video Input Processing (Contextual Analysis/Transcription):**
+        *   **1.1. `UserInputAttachment` for Video (as originally planned):**
             *   **Action:** Support `type: 'video'` in `UserInputAttachment`.
-        *   **1.2. Video Content Processing Strategy:**
-            *   **Action:** Define how video input will be handled. Direct video processing is complex.
-                *   Option A (Frame Extraction + VLM): Extract keyframes from the video, send them to a VLM for description. Combine descriptions as text context.
-                *   Option B (Audio Track Transcription): Extract audio track, transcribe it using STT logic from V2.5. Use transcript as text context.
-                *   Option C (Combination): Both A and B.
-            *   **Libraries:** Need libraries for video processing (e.g., `ffmpeg` via a Node wrapper like `fluent-ffmpeg` – can be heavy).
-        *   **1.3. Main Process Video Logic:**
-            *   **Action:** Implement chosen strategy in `ContentExtractionService` or a new `VideoProcessingService`.
-            *   **Output:** Extracted textual descriptions or transcripts.
-        *   **1.4. UI for Attaching Video Files:**
+        *   **1.2. Video Content Processing Strategy & Implementation (in `ContentExtractionService` or new `VideoProcessingService`):**
+            *   **Action:** Implement a pragmatic approach for extracting useful context from video files.
+                *   **Option A (Audio First):** Extract audio track from video -> Transcribe using existing STT (from V2.5). This is often the most valuable information for LLMs.
+                *   **Option B (Keyframe Analysis - if VLM support is robust):** Extract keyframes (e.g., using `ffmpeg` via a Node wrapper like `fluent-ffmpeg`) -> Send selected keyframes to a capable VLM for description. Combine descriptions. This is more complex.
+                *   **Focus for V3.0:** Prioritize Option A for wider applicability and simpler implementation. Option B can be an enhancement if VLM capabilities and performance allow.
+            *   **Libraries:** `fluent-ffmpeg` (or similar) will likely be needed. Ensure it's bundled correctly or user is guided for setup if it's a heavy dependency.
+        *   **1.3. UI for Attaching Video Files (Enhance `ChatInputAreaComponent`):**
             *   **Action:** Allow attaching common video formats (MP4, MOV, WEBM).
-            *   **Feedback:** Show "Processing video..." state.
+            *   **Feedback:** Show "Processing video..." state. Provide clear indication of what was extracted (e.g., "Video transcript added to context").
 
-    2.  **Basic Video Output (Playback Information / Links):**
-        *   **2.1. `AssistantOutputContent` for Video:**
-            *   **Action:** Add `{ type: 'video_info', video_url: string, title?: string, description?: string, thumbnail_url?: string }` to `AssistantOutputContent`.
-            *   **Note:** AI generating entire video files on the fly is generally not feasible for a desktop client yet. This is about AI *referencing or recommending* videos.
-        *   **2.2. `EnabledModelEntry` for Video Info:**
-            *   **Action:** `expectedOutputModalities` can include `'video_info'`. Some AIs might be good at finding relevant videos.
-        *   **2.3. Renderer for Video Info Output:**
-            *   **Action:** Display video information nicely: thumbnail, title, description.
-            *   **Details:** Embed a player if it's a direct link to a playable source (e.g., YouTube embed, direct MP4 link). Otherwise, a clickable link.
+    2.  **Basic Video Output Referencing (AI-Recommended Content):**
+        *   **2.1. `AssistantOutputContent` for Video Info (as originally planned):**
+            *   **Action:** Define `{ type: 'video_info', video_url: string, title?: string, description?: string, thumbnail_url?: string }`.
+            *   **Note:** Focus on AI *referencing* existing videos, not generating new ones.
+        *   **2.2. `EnabledModelEntry` for Video Info (as originally planned):**
+            *   **Action:** `expectedOutputModalities` can include `'video_info'`.
+        *   **2.3. `ChatMessageComponent` Enhancement for Video Info:**
+            *   **Action:** Render `video_info` elegantly: display thumbnail (if URL provided), title, description.
+            *   **Details:** If `video_url` points to a directly playable source (e.g., MP4) or a known embeddable platform (YouTube, Vimeo), attempt to embed a lightweight player. Otherwise, provide a clear clickable link. Style according to "Paper Modern."
 
-    3.  **Advanced Image Interaction (Consideration: Image Editing/Annotation Input):**
-        *   **3.1. (Exploratory) Basic Image Annotation Input:**
-            *   **Action:** Investigate simple client-side image annotation (e.g., drawing bounding boxes, adding text overlays) before sending to a VLM.
-            *   **Libraries:** Libraries like `Fabric.js` or `Konva.js` could be used. This is a significant feature.
-            *   **Benefit:** Allows more precise interaction with VLMs (e.g., "What is in this box?").
+    3.  **PPTX Content Extraction (Input Context):**
+        *   **3.1. Integrate PPTX Parsing Library (as originally planned):**
+            *   **Action:** Research and add a library like `pptx2json` or `node-pptx`.
+        *   **3.2. PPTX Extraction Logic in `ContentExtractionService`:**
+            *   **Action:** Extract text from slides, notes, and potentially image alt-texts or descriptions.
+        *   **3.3. UI for Attaching PPTX (Enhance `ChatInputAreaComponent`):**
+            *   **Action:** Update file attachment UI to accept `.pptx` files.
 
-    4.  **PPTX Content Extraction (Input Context):**
-        *   **4.1. Integrate PPTX Parsing Library:**
-            *   **Action:** Research and add a library for PPTX processing (e.g., `pptx2json` or others that can extract text and image descriptions).
-        *   **4.2. PPTX Extraction Logic:**
-            *   **Action:** Implement in `ContentExtractionService`. Extract text slides, notes, possibly image alt-texts.
-        *   **4.3. UI for Attaching PPTX:**
-            *   **Action:** Update "Attach File" to accept `.pptx` files.
+    4.  **Plugin Architecture - Foundational Implementation (Strategic & Phased):**
+        *   **4.1. Define Initial Plugin Scope & Interfaces:**
+            *   **Action:** Focus on **one or two key plugin types** for the initial rollout to keep complexity manageable.
+                *   **Type 1 (High Priority): AI Provider Plugins:** Allow adding new AI service providers (cloud APIs or local model servers not natively supported).
+                    *   `interface AiProviderPlugin { id: string; name: string; getModels(apiKey?: string): Promise<ModelInfo[]>; sendMessage(payload: ProviderPayload, config: PluginConfig): Promise<AssistantOutputContent>; requiresApiKey?: boolean; /* other necessary methods/props */ }`
+                *   **Type 2 (Consideration): Custom Content Renderers:** Allow plugins to render novel `AssistantOutputContent.type` values in the `ChatMessageComponent`.
+        *   **4.2. Plugin Discovery & Loading Mechanism (Main Process):**
+            *   **Action:** Implement a system to discover plugins (e.g., from a designated user plugins folder `~/.omnichat/plugins/` or similar).
+            *   **Details:** Securely load and register valid plugins. Handle versioning and potential conflicts simply at first.
+        *   **4.3. Core Application Refactoring for Plugin Hooks:**
+            *   **Action (Significant):** Identify and implement "hook" points in the core application logic where plugins can integrate.
+                *   **AI Providers:** Modify model selection logic and `sendChatMessage` to iterate over registered provider plugins.
+                *   **Content Renderers:** The `ChatMessageComponent` would need a way to delegate rendering to a plugin if the `assistantOutput.type` matches a plugin-registered type.
+        *   **4.4. Basic Plugin Management UI (Settings):**
+            *   **Action:** Create a new settings pane to list loaded plugins, show basic info (name, version, author), and allow enabling/disabling them.
+        *   **4.5. Developer Documentation for Plugins (Initial Draft):**
+            *   **Action:** Write clear, concise documentation for creating the initial supported plugin types, including interface definitions and examples.
 
-    5.  **Plugin Architecture (Strategic Exploration & Foundational Work):**
-        *   **5.1. Define Plugin Scope:**
-            *   **Action:** Determine initial areas for plugins.
-                *   AI Providers/Models: Allow users/community to add support for new APIs not natively included.
-                *   Content Extractors: For niche file types not covered.
-                *   Renderers: For custom display of specific `AssistantOutputContent` types.
-        *   **5.2. Design Plugin Interface:**
-            *   **Action:** Define clear JavaScript/TypeScript interfaces that plugins must implement.
-            *   **Example (Provider Plugin):** `interface AiProviderPlugin { name: string; getModels(): Promise<Model[]>; sendMessage(payload: PluginPayload): Promise<PluginResponse>; }`
-        *   **5.3. Plugin Loading & Management Mechanism:**
-            *   **Action:** Implement a system to discover, load, and manage plugins (e.g., from a user-defined folder).
-            *   **UI:** Basic settings UI to view loaded plugins, enable/disable.
-        *   **5.4. Refactor Core Logic for Plugin Hooks:**
-            *   **Action:** Identify points in `index.ts` and `renderer.ts` where plugin functionality can be injected (e.g., model selection list, message sending, content rendering).
-            *   **Note:** This is a significant architectural undertaking. Start with one plugin type (e.g., AI Providers).
+    5.  **Advanced Image Interaction (Exploratory - if time permits, aligns with "Potent"):**
+        *   **5.1. Basic Client-Side Image Annotation Input (as originally planned for consideration):**
+            *   **Action:** Investigate adding simple annotation tools (e.g., drawing a bounding box) to the image preview in `ChatInputAreaComponent` before sending to a VLM.
+            *   **Libraries:** `Fabric.js` or `Konva.js`. This is a stretch goal for V3.0 but would be a significant "potent" feature.
 
-    6.  **Performance Optimization & UI/UX Refinements:**
-        *   **6.1. Profiling:** Profile application performance, especially with large files, many messages, and concurrent AI calls. Optimize bottlenecks.
-        *   **6.2. UI Framework Leverage:** If a UI framework (Svelte/Vue) was adopted for chat rendering, leverage it for smoother animations, richer interactions, and potentially theming (light/dark).
-        *   **6.3. Advanced Search/Filtering:** More granular search options for chat sessions (e.g., by media type contained, by specific model used).
+    6.  **Performance Optimization & UI/UX ("Paper Modern") Polish:**
+        *   **6.1. Profiling & Optimization:** Profile application with many messages, large attachments, and concurrent AI calls. Optimize identified bottlenecks in both renderer and main processes.
+        *   **6.2. Consistent "Paper Modern" Styling:** Ensure all new UI elements (plugin manager, video info display, etc.) strictly adhere to the established "Paper Modern" design system. Refine existing components for greater visual harmony and usability.
+        *   **6.3. Advanced Chat Session Management (UI - from original `documentation.md` "Chat Folders"):**
+            *   **Action:** Implement Chat Folders for better organization of sessions in the sidebar, leveraging the UI framework.
+            *   **Details:** UI for creating, renaming, deleting folders; drag-and-drop or context menu to move sessions into folders.
 
     7.  **Testing & Documentation:**
-        *   **7.1. Test video input/output flows.**
-        *   **7.2. Test PPTX extraction.**
-        *   **7.3. If plugin architecture started, test plugin loading and basic functionality.**
-        *   **7.4. Comprehensive update to all documentation (user and developer).**
+        *   **7.1. Test video input/output flows, PPTX extraction.**
+        *   **7.2. Critically test the plugin loading mechanism and at least one example AI Provider plugin.**
+        *   **7.3. Update all user and developer documentation, especially for the new plugin system.**
 
 *   **Key Outcomes for V3.0:**
-    *   OmniChat supports a wide range of multi-modal inputs (text, image, audio, basic video context, documents).
-    *   It can handle diverse AI outputs (text, images, audio, video links).
-    *   The foundation for a plugin architecture is laid, paving the way for community contributions and easier expansion.
-    *   The application is highly performant and polished, truly serving as a universal AI interaction hub.
+    *   OmniChat supports a comprehensive range of multi-modal inputs (text, images, audio, basic video context, PDF, DOCX, PPTX).
+    *   It can handle a diverse set of AI outputs (text, images, audio, video references).
+    *   **The foundational plugin architecture is in place, enabling community contributions and future extensibility, particularly for AI providers.**
+    *   Chat organization is significantly improved with folders.
+    *   The application is highly performant, polished, and truly embodies the vision of a "Universal Multi-Modal AI Hub" with a strong "Paper Modern" identity.
+    *   OmniChat is now a highly "potent" and "future-ready" platform.
+
 
 ---
 
-### **Post-V3.0: Future Horizons**
+## Part 3: Advanced Capabilities & Maturity (Post-V3.0)
 
-*   **Advanced RAG (Retrieval Augmented Generation):** Built-in vector DB / semantic search over user's documents for richer context.
-*   **Agentic Capabilities:** Support for AI agents that can perform multi-step tasks.
-*   **Real-time Collaboration (Optional):** If a use case emerges for shared AI interaction.
-*   **Deeper OS Integration:** E.g., global hotkeys, system tray agent.
-*   **Full Theming Support.**
-*   **Mobile Companion App (Very Long Term):** Synchronized experience.
+With the core multi-modal interaction hub and foundational plugin architecture established by Version 3.0, OmniChat will evolve towards deeper intelligence, more autonomous capabilities, and an even more refined user experience. This phase focuses on realizing the full potential of a "most potent" and "future-ready" desktop AI platform.
 
 ---
-Regarding current architecture:
 
-This is a critical strategic question. Based on the `documentation.md` you provided and the ambitious vision for OmniChat, here's an analysis of the current architecture's strengths and weaknesses, and whether a rewrite is necessary:
+### **Focus Area 1: Deepening Intelligence & Contextual Understanding (RAG & Knowledge Management)**
 
-**Current Architecture (as understood from `documentation.md`):**
+*   **Objective:** Transform OmniChat into a personal knowledge assistant by integrating advanced Retrieval Augmented Generation (RAG) capabilities, allowing users to converse with their own documents and data sources at a deeper level.
+*   **Theme:** "Your AI, Your Knowledge"
 
-*   **Platform:** Electron (Node.js, HTML, CSS, TypeScript).
-*   **UI (Renderer Process):** Vanilla TypeScript, HTML, CSS. No major frontend framework. Modularized settings UI.
-*   **Core Logic (`src/renderer.ts`):** Main script for UI, chat session logic, event listeners, orchestrates UI modules.
-*   **State Management:** Module-level variables in `src/renderer.ts`.
-*   **API Integration:** Direct `axios` calls.
-*   **Local Storage:** `electron-store`.
-*   **Build System:** Electron Forge with Webpack.
+*   **Potential Features & Technical Steps:**
 
-**Strengths of the Current Architecture for the Vision:**
+    1.  **Integrated Local Vector Database & Semantic Search:**
+        *   **Action:** Integrate a lightweight, embeddable vector database (e.g., LanceDB, DuckDB with vector extensions, a custom solution leveraging sentence-transformers locally).
+        *   **Details:**
+            *   Allow users to designate local folders or specific documents to be indexed.
+            *   The `ContentExtractionService` will be extended to chunk and embed text from supported file types.
+            *   Implement semantic search functionality accessible within OmniChat.
+        *   **UI:** Settings for managing indexed sources, UI for viewing/querying the local knowledge base.
+    2.  **Automatic RAG for Chat Context:**
+        *   **Action:** When a user asks a question, OmniChat can optionally perform a semantic search over the indexed local knowledge base.
+        *   **Details:** Relevant snippets are retrieved and automatically prepended/injected into the LLM prompt as context, enabling the AI to answer questions based on the user's private documents.
+        *   **UI:** Clear indicators when RAG is being used, ability to view retrieved context sources.
+    3.  **RAG Strategy Configuration:**
+        *   **Action:** Allow users to configure RAG behavior (e.g., number of chunks to retrieve, re-ranking strategies, which knowledge sources to query for specific chats/personas).
 
-1.  **Electron Foundation:** Excellent choice for a cross-platform desktop application. It provides access to Node.js for backend tasks (like managing local model processes, file system access, complex API logic) and web technologies for the UI. This is well-aligned with the vision.
-2.  **TypeScript:** Provides type safety and better code organization, which is crucial for a large, evolving project.
-3.  **Modular UI for Settings:** The refactoring of settings into `settings-modal-manager.ts`, `settings-api-keys-ui.ts`, etc., is a good step towards maintainability. This approach can be extended.
-4.  `electron-store`: Suitable for local storage of configurations, API keys, and chat history for a personal-use application.
-5.  **Existing Core Functionality:** You have a working application with chat, session management, API key handling, etc. This is a valuable starting point and represents significant effort already invested.
+### **Focus Area 2: Enabling Agentic & Proactive AI Capabilities**
 
-**Weaknesses/Challenges of the Current Architecture for the Full Vision:**
+*   **Objective:** Empower OmniChat to go beyond reactive Q&A by supporting AI agents that can perform multi-step tasks, interact with external tools (via plugins), and potentially offer proactive assistance.
+*   **Theme:** "AI as Your Co-Pilot"
 
-1.  **Vanilla JS/TS for Complex UI (Renderer - Chat Area):**
-    *   **The Biggest Concern.** As OmniChat moves towards rich multi-modal input (previews of attached images/audio/video in the input area) and especially multi-modal output (rendering images, audio players, video embeds, structured data from AI *within the chat messages*), managing the DOM, state, and event handling with vanilla JS/TS will become increasingly complex, error-prone, and slow to develop.
-    *   Imagine a chat message that needs to display user-typed text, an image they attached, and then an AI response that includes generated text, a generated image, and an audio player. Managing the lifecycle, updates, and interactions of these elements purely via DOM manipulation will be very challenging.
-2.  **Global State Management (Renderer):**
-    *   While module-level variables in `renderer.ts` might work for the current feature set, as the application grows with more complex state (e.g., active media processing, plugin states, detailed model capabilities), this can become hard to manage, debug, and can lead to prop-drilling or tight coupling.
-3.  **Direct `axios` Calls (Main Process - Can be Improved):**
-    *   While functional, as you integrate more diverse AI providers with varying authentication schemes, request/response formats, and error handling, a more structured approach to API interaction (e.g., a dedicated API client service layer with provider-specific adapters/strategies) would improve maintainability and testability.
-4.  **Extensibility (Plugin Architecture):**
-    *   The current architecture doesn't inherently lend itself to a plugin system without significant refactoring. Adding hooks, defining plugin interfaces, and managing plugin lifecycles will require careful architectural design.
+*   **Potential Features & Technical Steps:**
 
-**Rewrite from Scratch vs. Refactor/Evolve:**
+    1.  **Agentic Framework & Plugin Extension:**
+        *   **Action:** Extend the plugin architecture to support "Tool Use" or "Function Calling" plugins.
+        *   **Details:** Define interfaces for plugins that expose specific tools/actions (e.g., web search, calculator, calendar access, file system operations – with strict user permissions).
+        *   Models that support function calling (like newer OpenAI models, Gemini, or local models fine-tuned for it) can leverage these plugins.
+    2.  **Multi-Step Task Orchestration:**
+        *   **Action:** Implement a basic agentic loop within OmniChat that can manage a sequence of LLM calls and tool uses to achieve a user-defined goal.
+        *   **Details:** State management for ongoing tasks, UI for visualizing agent steps and progress.
+        *   **Example:** "Summarize the key points from the attached PDF and then find recent news articles about its main topic."
+    3.  **User-Defined Agentic Workflows:**
+        *   **Action:** (Ambitious) Explore a UI for users to define simple agentic workflows or chain prompts and tool uses together.
 
-**A full rewrite from scratch is likely NOT necessary and would discard valuable existing work.** The Electron foundation is solid. The core problem isn't the *platform* but specific implementation choices, primarily in the renderer process for the UI.
+### **Focus Area 3: Enhancing Desktop Integration & User Experience Polish**
 
-**Recommended Approach: Strategic and Incremental Refactoring & Evolution**
+*   **Objective:** Further solidify OmniChat's "Desktop-Native" advantage and refine the "Paper Modern" experience to an exceptional level of polish and personalization.
+*   **Theme:** "Seamlessly Integrated, Beautifully Personal"
 
-Here's a path forward:
+*   **Potential Features & Technical Steps:**
 
-1.  **Prioritize the Renderer's Chat UI:**
-    *   **Adopt a UI Framework (Svelte, Vue, or React/Preact):** This is the most critical change for realizing the multi-modal vision.
-        *   **Why?** These frameworks provide declarative rendering, component-based architecture, efficient state management, and tooling that vastly simplifies building complex, interactive UIs.
-        *   **How?**
-            *   **Incrementally:** You don't need to rewrite the *entire* renderer at once. Start by rewriting the chat message rendering component and the chat input area. The settings panels can remain vanilla JS/TS for now if they are stable and less complex.
-            *   **Svelte or Vue** are often recommended for Electron apps or for introducing a framework into an existing project due to their smaller learning curve, good performance, and ease of integration compared to React's larger ecosystem requirements (though React is also viable).
-    *   **Benefit:** This will make implementing multi-modal message display (images, audio players in chat bubbles) and complex input areas (with file previews) much more manageable and maintainable.
+    1.  **Deeper OS Integration:**
+        *   **Action:** Implement features that leverage the desktop environment more fully.
+        *   **Details:**
+            *   **Global Hotkeys:** Configurable global hotkey to quickly summon OmniChat or trigger specific actions (e.g., "Ask OmniChat about selected text").
+            *   **System Tray / Menu Bar Agent:** Option for OmniChat to run as a lightweight background agent for quick access.
+            *   **Native File System Interactions:** More advanced interactions with the local file system (e.g., "Organize these downloaded files based on their content" – tied to agentic capabilities).
+    2.  **Advanced Theming & Personalization:**
+        *   **Action:** Expand beyond basic light/dark modes.
+        *   **Details:**
+            *   Full "Paper Modern" theming engine allowing user-defined color palettes, font choices (within limits), and potentially layout density adjustments.
+            *   Shareable theme files.
+    3.  **Command Palette / Universal Search:**
+        *   **Action:** Implement a global command palette (e.g., Ctrl/Cmd+K) within OmniChat for quick access to all features, settings, chats, and actions.
+    4.  **Enhanced Accessibility:**
+        *   **Action:** Conduct thorough accessibility audits and implement improvements based on WCAG guidelines (ARIA attributes, keyboard navigation, screen reader compatibility).
 
-2.  **Refine State Management (Renderer):**
-    *   If you adopt a UI framework, use its idiomatic state management solution (e.g., Svelte Stores, Vuex/Pinia, React Context/Redux/Zustand).
-    *   This will provide a more structured way to manage application state related to the UI, active chat, selected models, etc.
+### **Focus Area 4: Community & Ecosystem Growth (Leveraging Open Source)**
 
-3.  **Structure API Interaction (Main Process):**
-    *   Create a dedicated service layer in the main process for handling interactions with AI APIs.
-    *   Use a pattern like the Strategy or Adapter pattern to handle different AI providers. This will make adding new providers cleaner.
-    *   Centralize error handling, request formatting, and response parsing for different APIs.
+*   **Objective:** If OmniChat becomes open-source as envisioned, actively foster a community and encourage contributions to the plugin ecosystem and core application.
+*   **Theme:** "Built by Many, For All"
 
-4.  **Plan for Extensibility (Later, Post-UI Refactor):**
-    *   Once the core UI and API interactions are more robust, you can start designing the plugin architecture. The modularity introduced by a UI framework and a service layer for APIs will make it easier to define clear plugin interfaces and integration points.
+*   **Potential Features & Technical Steps:**
 
-5.  **Evolve the Main Process Logic:**
-    *   The main process logic in `index.ts` will continue to house business logic, `electron-store` interactions, IPC handling, and the new API service layer. This part of the architecture is generally sound but will grow as features are added.
+    1.  **Robust Developer Documentation & Tooling:**
+        *   **Action:** Comprehensive, well-maintained documentation for plugin developers, including tutorials, API references, and example plugins.
+        *   **Details:** Potentially a CLI tool for bootstrapping new plugins.
+    2.  **Plugin Repository / Marketplace (Simple & Curated):**
+        *   **Action:** A simple, discoverable way for users to find and install community-contributed plugins (e.g., a curated list on a website, or direct integration if a secure mechanism is developed).
+    3.  **Clear Contribution Guidelines:**
+        *   **Action:** Establish clear guidelines for contributing to the OmniChat core or submitting plugins.
 
-**When a component becomes too complex in Vanilla JS/TS:**
+---
 
-*   **Symptom:** You find yourself writing a lot of manual DOM manipulation code (`document.createElement`, `appendChild`, `setAttribute`, complex event listener management).
-*   **Symptom:** State updates become hard to track, leading to UI inconsistencies.
-*   **Symptom:** Adding a new visual element or interaction to an existing component feels like a major undertaking.
-*   **Action:** This is a strong signal that this specific component would benefit from being rewritten using a UI framework.
-
-**Conclusion:**
-
-Your current architecture has a **strong foundation** with Electron and TypeScript. **You do not need to rewrite from scratch.**
-
-The **primary area requiring significant evolution is the renderer process's UI handling, especially for the chat interaction area, by adopting a modern JavaScript framework.** This is the most critical step to sustainably achieve the complex multi-modal aspects of your vision. Other areas like state management and main process API interaction can be refactored and improved incrementally.
-
-Start with the UI framework adoption for the most complex visual part (chat messages and input). This will provide the biggest leverage for future development towards your ambitious and exciting vision for OmniChat.
-
+This "Post-V3.0" roadmap is, by nature, more exploratory. The priority and specific implementation of these advanced features will depend on user feedback, the evolution of AI technology, and available development resources. However, they represent the logical next steps in fulfilling the vision of OmniChat as the **most potent, future-ready, and deeply integrated desktop AI interaction hub.** The foundational work done in versions 1.5 through 3.0, especially the UI framework adoption and the plugin architecture, is critical to enabling these advanced capabilities.
